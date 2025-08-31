@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CatchThePhish Demo - Test Page</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .demo-section {
+            background: white;
+            margin: 20px 0;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .demo-section h2 {
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .link-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .link-item {
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: #f8f9fa;
+        }
+
+        .link-item h4 {
+            margin: 0 0 10px 0;
+            color: #e74c3c;
+        }
+
+        .link-item p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .link-item a {
+            display: inline-block;
+            margin: 10px 0;
+            padding: 8px 12px;
+            background: #e74c3c;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .link-item a:hover {
+            background: #c0392b;
+        }
+
+        .safe-section {
+            background: #e8f5e8;
+        }
+
+        .safe-section h2 {
+            color: #27ae60;
+            border-bottom-color: #27ae60;
+        }
+
+        .safe-section .link-item {
+            background: #f0f8f0;
+            border-color: #27ae60;
+        }
+
+        .safe-section .link-item h4 {
+            color: #27ae60;
+        }
+
+        .safe-section .link-item a {
+            background: #27ae60;
+        }
+
+        .safe-section .link-item a:hover {
+            background: #229954;
+        }
+
+        .warning-banner {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .test-instructions {
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            color: #1565c0;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .test-instructions ol {
+            margin: 10px 0 0 20px;
+        }
+
+        .copy-test {
+            background: #f3e5f5;
+            border: 1px solid #ce93d8;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+
+        .copy-test input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="warning-banner">
+        <strong>⚠️ Demo Test Page</strong> - This page contains intentionally suspicious links for testing the CatchThePhish extension. Do not visit these links without protection!
+    </div>
+
+    <div class="test-instructions">
+        <strong>🧪 How to Test Your Extension:</strong>
+        <ol>
+            <li>Make sure your CatchThePhish extension is loaded and active</li>
+            <li>Open Chrome DevTools Console (F12) to see detection logs</li>
+            <li>Hover over the suspicious links below (wait 500ms for detection)</li>
+            <li>Look for warning popups and console messages</li>
+            <li>Try copying and pasting the URLs in the test section</li>
+        </ol>
+    </div>
+
+    <!-- Typosquatting Tests -->
+    <div class="demo-section">
+        <h2>🎭 Typosquatting Detection Tests</h2>
+        <p>These links mimic popular websites with slight spelling variations:</p>
+        
+        <div class="link-grid">
+            <div class="link-item">
+                <h4>Fake Google</h4>
+                <p>Should trigger: Domain impersonation detection</p>
+                <a href="http://g00gle.com" target="_blank">g00gle.com</a>
+            </div>
+            
+            <div class="link-item">
+                <h4>Fake PayPal</h4>
+                <p>Should trigger: Typosquatting detection</p>
+                <a href="http://paypaI.com" target="_blank">paypaI.com (with capital i)</a>
+            </div>
+            
+            <div class="link-item">
+                <h4>Fake Amazon</h4>
+                <p>Should trigger: Domain similarity detection</p>
+                <a href="http://amazom.com" target="_blank">amazom.com</a>
+            </div>
+            
+            <div class="link-item">
+                <h4>Fake Microsoft</h4>
+                <p>Should trigger: Character substitution detection</p>
+                <a href="http://microsft.com" target="_blank">microsft.com</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- IP Address Tests -->
+    <div class="demo-section">
+        <h2>🌐 IP Address Detection Tests</h2>
+        <p>Legitimate websites use domain names, not IP addresses:</p>
+        
+        <div class="link-grid">
+            <div class="link-item">
+                <h4>Suspicious IP Address</h4>
+                <p>Should trigger: IP address instead of domain</p>
+                <a href="http://192.168.1.100" target="_blank">192.168.1.100</a>
+            </div>
+            
+            <div class="link-item">
+                <h4>Another Suspicious IP</h4>
+                <p>Should trigger: IP address detection</p>
+                <a href="http://203.45.67.89/login" target="_blank">203.45.67.89/login</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Suspicious Pattern Tests -->
+    <div class="demo-section">
+        <h2>🚨 Suspicious Pattern Detection Tests</h2>
+        <p>URLs containing common phishing keywords and patterns:</p>
+        
+        <div class="link-grid">
+            <div class="link-item">
+                <h4>Urgent Account Update</h4>
+                <p>Should trigger: Suspicious pattern detection</p>
+                <a href="http://secure-account-update.com/urgent" target="_blank">secure-account-update.com/urgent</a>
+            </div>
+            
+            <div class="link-item">
+                <h4>Verify Account Now</h4>
+                <p>Should trigger: Phishing pattern detection</p>
+                <a href="http://verify-account-now.net/click-here-now" target="_blank">verify-account-now.net/click-here-now</a>
+            </div>
+            
+            <div class="link-item">
+                <h4>Suspended Account</h4>
+                <p>Should trigger: Suspicious pattern detection</p>
+                <a href="http://account-suspended.org/limited-time" target="_blank">account-suspended.org/limited-time</a>
+            </div>
+            
+            <div class="link-item">
+                <h4>Security Alert</h4>
+                <p>Should trigger: Multiple suspicious patterns</p>
+                <a href="http://security-alert.info/urgent-action-required" target="_blank">security-alert.info/urgent-action-required</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Character Encoding Tests -->
+    <div class="demo-section">
+        <h2>🔤 Suspicious Character Detection Tests</h2>
+        <p>URLs using unusual characters or encoding tricks:</p>
+        
+        <div class="link-grid">
+            <div class="link-item">
+                <h4>Punycode Domain</h4>
+                <p>Should trigger: Unusual character encoding</p>
+                <a href="http://xn--e1afmkfd.xn--p1ai" target="_blank">xn--e1afmkfd.xn--p1ai</a>
+            </div>
+            
+            <div class="link-item">
+                <h4>Multiple Hyphens</h4>
+                <p>Should trigger: Suspicious character pattern</p>
+                <a href="http://pay--pal--secure.com" target="_blank">pay--pal--secure.com</a>
+            </div>
+            
+            <div class="link-item">
+                <h4>Number Sequences</h4>
+                <p>Should trigger: Suspicious number pattern</p>
+                <a href="http://bank12345.com" target="_blank">bank12345.com</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Copy/Paste Test Section -->
+    <div class="copy-test">
+        <h3>📋 Copy/Paste Detection Test</h3>
+        <p>Test the copy and paste detection features:</p>
+        
+        <div style="margin: 15px 0;">
+            <strong>Copy this suspicious URL:</strong>
+            <input type="text" value="http://paypaI-security-update.com/verify-account-now" readonly 
+                   onclick="this.select()" style="margin-left: 10px; width: 400px;">
+        </div>
+        
+        <div style="margin: 15px 0;">
+            <strong>Paste suspicious URLs here:</strong>
+            <input type="text" placeholder="Paste a URL here to test detection..." style="width: 400px;">
+        </div>
+    </div>
+
+    <!-- Safe Links Section (Control Group) -->
+    <div class="demo-section safe-section">
+        <h2>✅ Safe Links (Should NOT Trigger Warnings)</h2>
+        <p>These legitimate links should pass all security checks:</p>
+        
+        <div class="link-grid">
+            <div class="link-item">
+                <h4>Google (Legitimate)</h4>
+                <p>Should be safe - no warnings expected</p>
+                <a href="https://www.google.com" target="_blank">google.com</a>
+            </div>
+            
+            <div class="link-item">
+                <h4>GitHub (Legitimate)</h4>
+                <p>Should be safe - no warnings expected</p>
+                <a href="https://github.com" target="_blank">github.com</a>
+            </div>
+            
+            <div class="link-item">
+                <h4>Stack Overflow (Legitimate)</h4>
+                <p>Should be safe - no warnings expected</p>
+                <a href="https://stackoverflow.com" target="_blank">stackoverflow.com</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test Results Section -->
+    <div class="demo-section">
+        <h2>📊 Test Results</h2>
+        <p>Use this section to track your testing results:</p>
+        
+        <div id="testResults">
+            <h4>Expected Detections:</h4>
+            <ul>
+                <li>✅ g00gle.com - Typosquatting</li>
+                <li>✅ paypaI.com - Character substitution</li>
+                <li>✅ amazom.com - Typosquatting</li>
+                <li>✅ IP addresses - Should all trigger warnings</li>
+                <li>✅ "secure-account-update" - Suspicious patterns</li>
+                <li>✅ "verify-account-now" - Phishing patterns</li>
+                <li>✅ Punycode domains - Character encoding</li>
+            </ul>
+            
+            <h4>Should NOT Trigger:</h4>
+            <ul>
+                <li>❌ google.com - Legitimate domain</li>
+                <li>❌ github.com - Legitimate domain</li>
+                <li>❌ stackoverflow.com - Legitimate domain</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Advanced Test Cases -->
+    <div class="demo-section">
+        <h2>🔬 Advanced Test Cases</h2>
+        <p>More sophisticated phishing attempts:</p>
+        
+        <div class="link-grid">
+            <div class="link-item">
+                <h4>Subdomain Spoofing</h4>
+                <p>Should trigger: Suspicious subdomain</p>
+                <a href="http://secure.paypal.phishing-site.com" target="_blank">secure.paypal.phishing-site.com</a>
+            </div>
+            
+            <div class="link-item">
+                <h4>Long Suspicious URL</h4>
+                <p>Should trigger: Excessive length + patterns</p>
+                <a href="http://urgent-security-update-required-for-your-account-verification-click-here-now.com/verify?urgent=true&action=required&time=limited" target="_blank">Very Long Suspicious URL</a>
+            </div>
+            
+            <div class="link-item">
+                <h4>Banking Impersonation</h4>
+                <p>Should trigger: Multiple suspicious indicators</p>
+                <a href="http://banking-security-alert.tk/urgent-action" target="_blank">banking-security-alert.tk</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add some interactivity for testing
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Demo page loaded - ready for CatchThePhish testing');
+            
+            // Add click handlers to prevent actual navigation during demo
+            const suspiciousLinks = document.querySelectorAll('.demo-section:not(.safe-section) a');
+            suspiciousLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    alert(`Demo: Prevented navigation to ${link.href}\n\nIn a real scenario, this could be a malicious site!`);
+                });
+            });
+            
+            // Track hover events for demo purposes
+            let hoverCount = 0;
+            document.addEventListener('mouseover', (e) => {
+                if (e.target.tagName === 'A') {
+                    hoverCount++;
+                    console.log(`Demo: Link hover #${hoverCount} - ${e.target.href}`);
+                }
+            });
+        });
+
+        // Test copy functionality
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                console.log('Demo: Copied to clipboard:', text);
+            });
+        }
+    </script>
+</body>
+</html>

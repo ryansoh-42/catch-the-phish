@@ -1,0 +1,140 @@
+/* CatchThePhish Content Warning Styles */
+.catchthephish-warning {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    width: 350px !important;
+    background: white !important;
+    border: 2px solid #f44336 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+    z-index: 2147483647 !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    animation: slideIn 0.3s ease-out !important;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.warning-content {
+    padding: 0 !important;
+}
+
+.warning-header {
+    display: flex !important;
+    align-items: center !important;
+    padding: 15px 20px !important;
+    background: #f44336 !important;
+    color: white !important;
+    border-radius: 6px 6px 0 0 !important;
+}
+
+.warning-icon {
+    font-size: 18px !important;
+    margin-right: 10px !important;
+}
+
+.warning-title {
+    flex: 1 !important;
+    font-weight: 600 !important;
+    font-size: 16px !important;
+}
+
+.warning-close {
+    background: none !important;
+    border: none !important;
+    color: white !important;
+    font-size: 20px !important;
+    cursor: pointer !important;
+    padding: 0 !important;
+    width: 24px !important;
+    height: 24px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.warning-close:hover {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border-radius: 50% !important;
+}
+
+.warning-body {
+    padding: 20px !important;
+}
+
+.warning-body p {
+    margin: 0 0 10px 0 !important;
+    color: #333 !important;
+}
+
+.warning-body strong {
+    color: #f44336 !important;
+}
+
+.educational-tip {
+    margin-top: 15px !important;
+    padding: 12px !important;
+    background: #fff3cd !important;
+    border: 1px solid #ffeaa7 !important;
+    border-radius: 4px !important;
+    font-size: 13px !important;
+}
+
+.educational-tip strong {
+    color: #856404 !important;
+}
+
+.warning-actions {
+    padding: 15px 20px !important;
+    border-top: 1px solid #eee !important;
+    display: flex !important;
+    gap: 10px !important;
+}
+
+.btn-safe {
+    flex: 1 !important;
+    padding: 10px 16px !important;
+    background: #6c757d !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    font-size: 14px !important;
+    transition: background 0.2s !important;
+}
+
+.btn-safe:hover {
+    background: #5a6268 !important;
+}
+
+.btn-report {
+    flex: 1 !important;
+    padding: 10px 16px !important;
+    background: #007bff !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    font-size: 14px !important;
+    transition: background 0.2s !important;
+}
+
+.btn-report:hover {
+    background: #0056b3 !important;
+}
+
+/* Ensure warning appears above everything */
+.catchthephish-warning * {
+    box-sizing: border-box !important;
+}

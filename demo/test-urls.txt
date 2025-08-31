@@ -1,0 +1,37 @@
+## Typosquatting Examples:
+http://g00gle.com
+http://facebok.com
+http://amazom.com
+http://microsft.com
+http://paypaI.com
+http://netfIix.com
+
+## IP Address Examples:
+http://192.168.1.1
+http://10.0.0.1/login
+http://172.16.0.1/secure
+
+## Suspicious Pattern Examples:
+http://secure-account-update.com/urgent
+http://verify-your-account-now.net
+http://suspended-account-alert.org
+http://click-here-now-limited-time.com
+http://urgent-security-update.info
+http://confirm-identity-required.biz
+
+## Character Encoding Examples:
+http://xn--e1afmkfd.xn--p1ai
+http://pay--pal--security.com
+http://bank12345678.com
+
+## Advanced Examples:
+http://secure.paypal.fake-site.com
+http://login.amazon.suspicious-domain.net
+http://account.microsoft.phishing-attempt.org
+
+## Safe URLs (Should NOT trigger):
+https://www.google.com
+https://github.com
+https://stackoverflow.com
+https://www.microsoft.com
+https://www.paypal.com

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CatchThePhish</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="popup-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">
+                <span class="shield-icon">🛡️</span>
+                <h1>CatchThePhish</h1>
+            </div>
+            <div class="status" id="status">
+                <span class="status-indicator active" id="statusIndicator"></span>
+                <span id="statusText">Active</span>
+            </div>
+        </div>
+
+        <!-- Stats Section -->
+        <div class="stats-section">
+            <h2>Protection Stats</h2>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-number" id="blockedCount">0</span>
+                    <span class="stat-label">Threats Blocked</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="reportedCount">0</span>
+                    <span class="stat-label">URLs Reported</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Page Analysis -->
+        <div class="analysis-section">
+            <h2>Current Page</h2>
+            <div class="page-status" id="pageStatus">
+                <span class="page-icon">✅</span>
+                <span class="page-text">This page appears safe</span>
+            </div>
+            <button class="btn-scan" id="scanPage">Scan This Page</button>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="actions-section">
+            <h2>Quick Actions</h2>
+            <button class="btn-action" id="reportPage">
+                <span class="btn-icon">📝</span>
+                Report This Page
+            </button>
+            <button class="btn-action" id="viewReports">
+                <span class="btn-icon">📊</span>
+                View Reports
+            </button>
+        </div>
+
+        <!-- Educational Tip -->
+        <div class="tip-section">
+            <h2>💡 Security Tip</h2>
+            <p id="dailyTip">Loading tip...</p>
+        </div>
+
+        <!-- Settings -->
+        <div class="settings-section">
+            <div class="setting-item">
+                <label class="toggle">
+                    <input type="checkbox" id="enableProtection" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="setting-label">Enable Real-time Protection</span>
+            </div>
+            <div class="setting-item">
+                <label class="toggle">
+                    <input type="checkbox" id="enableTips" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="setting-label">Show Educational Tips</span>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Stay safe online! 🛡️</p>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>
