@@ -4,44 +4,27 @@ class PhishingDetector {
     constructor() {
         this.isEnabled = true;
         this.warningElement = null;
+        this.hoverTimeout = null;
         this.init();
     }
 
     init() {
-        // Listen for link interactions
         this.setupLinkMonitoring();
-        
-        // Listen for messages from background script
         this.setupMessageListener();
-        
         console.log('CatchThePhish: Phishing detector initialized');
     }
 
     setupLinkMonitoring() {
-        // Add these properties to track state
-        this.checkedURLs = new Set();
-        this.hoverTimeout = null;
-        this.lastCheckedURL = null;
-
-        // Monitor mouse hover events on links with debouncing
+        // Monitor mouse hover events with debouncing
         document.addEventListener('mouseover', (event) => {
             if (event.target.tagName === 'A' && event.target.href) {
-                // Clear previous timeout
                 if (this.hoverTimeout) {
                     clearTimeout(this.hoverTimeout);
                 }
                 
-                const url = event.target.href;
-                
-                // Skip if already checked this URL
-                if (this.checkedURLs.has(url)) {
-                    return;
-                }
-                
-                // Wait 500ms before checking (debounce)
                 this.hoverTimeout = setTimeout(() => {
                     this.checkLink(event.target);
-                }, 500);
+                }, CONFIG?.DETECTION?.HOVER_DELAY || 500);
             }
         });
 
@@ -53,7 +36,7 @@ class PhishingDetector {
             }
         });
 
-        // Monitor when users copy links
+        // Monitor copy events
         document.addEventListener('copy', (event) => {
             const selection = window.getSelection().toString();
             if (this.isURL(selection)) {
@@ -61,9 +44,8 @@ class PhishingDetector {
             }
         });
 
-        // Monitor paste events (for when users paste URLs)
+        // Monitor paste events
         document.addEventListener('paste', (event) => {
-            // Small delay to let paste complete
             setTimeout(() => {
                 const pastedText = event.target.value || event.target.textContent;
                 if (this.isURL(pastedText)) {
@@ -74,7 +56,6 @@ class PhishingDetector {
     }
 
     setupMessageListener() {
-        // Listen for messages from background script
         chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             if (request.action === 'urlCheckResult') {
                 this.handleURLCheckResult(request.data);
@@ -83,33 +64,48 @@ class PhishingDetector {
     }
 
     checkLink(linkElement) {
-        const url = linkElement.href;
-        
-        // Add to checked URLs to prevent duplicates
-        this.checkedURLs.add(url);
-        
-        console.log('CatchThePhish: Checking link:', url);
-        
-        // Send URL to background script for analysis
-        chrome.runtime.sendMessage({
-            action: 'checkURL',
-            url: url,
-            element: this.getElementInfo(linkElement)
-        });
+        try {
+            const url = linkElement.href;
+            
+            if (!InputValidator.isValidURL(url)) {
+                console.warn('CatchThePhish: Invalid URL detected:', url);
+                return;
+            }
+            
+            const sanitizedUrl = InputValidator.sanitizeURL(url);
+            console.log('CatchThePhish: Checking link:', sanitizedUrl);
+            
+            chrome.runtime.sendMessage({
+                action: 'checkURL',
+                url: sanitizedUrl,
+                element: this.getElementInfo(linkElement)
+            });
+        } catch (error) {
+            console.error('CatchThePhish: Error checking link:', error);
+        }
     }
 
     checkURL(url, context) {
-        console.log(`CatchThePhish: Checking ${context} URL:`, url);
-        
-        chrome.runtime.sendMessage({
-            action: 'checkURL',
-            url: url,
-            context: context
-        });
+        try {
+            if (!InputValidator.isValidURL(url)) {
+                console.warn('CatchThePhish: Invalid URL in context:', context, url);
+                return;
+            }
+            
+            const sanitizedUrl = InputValidator.sanitizeURL(url);
+            console.log(`CatchThePhish: Checking ${context} URL:`, sanitizedUrl);
+            
+            chrome.runtime.sendMessage({
+                action: 'checkURL',
+                url: sanitizedUrl,
+                context: context
+            });
+        } catch (error) {
+            console.error('CatchThePhish: Error checking URL:', error);
+        }
     }
 
     isURL(text) {
-        // Simple URL detection regex
         const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/i;
         return urlPattern.test(text.trim());
     }
@@ -119,28 +115,29 @@ class PhishingDetector {
             tagName: element.tagName,
             className: element.className,
             id: element.id,
-            text: element.textContent.trim().substring(0, 100) // First 100 chars
+            text: element.textContent.trim().substring(0, 100)
         };
     }
 
     handleURLCheckResult(data) {
         if (data.isSuspicious) {
+            console.log('CatchThePhish: Showing warning for suspicious URL:', {
+                url: data.url,
+                fromCache: data.fromCache,
+                reason: data.reason
+            });
             this.showWarning(data);
         }
     }
 
     showWarning(warningData) {
-        // Remove any existing warnings
         this.hideWarning();
-
-        // Create warning popup
         this.warningElement = this.createWarningElement(warningData);
         document.body.appendChild(this.warningElement);
 
-        // Auto-hide after 10 seconds
         setTimeout(() => {
             this.hideWarning();
-        }, 10000);
+        }, CONFIG?.DETECTION?.WARNING_AUTO_HIDE || 12000);
     }
 
     createWarningElement(data) {
@@ -148,26 +145,118 @@ class PhishingDetector {
         warning.id = 'catchthephish-warning';
         warning.className = 'catchthephish-warning';
         
-        warning.innerHTML = `
-            <div class="warning-content">
-                <div class="warning-header">
-                    <span class="warning-icon">⚠️</span>
-                    <span class="warning-title">Suspicious Link Detected</span>
-                    <button class="warning-close" onclick="this.parentElement.parentElement.parentElement.remove()">&times;</button>
-                </div>
-                <div class="warning-body">
-                    <p><strong>Reason:</strong> ${data.reason}</p>
-                    <p><strong>URL:</strong> ${data.url}</p>
-                    ${data.tip ? `<div class="educational-tip"><strong>💡 Tip:</strong> ${data.tip}</div>` : ''}
-                </div>
-                <div class="warning-actions">
-                    <button class="btn-safe" onclick="this.parentElement.parentElement.parentElement.remove()">I Understand</button>
-                    <button class="btn-report" onclick="window.catchThePhishReport('${data.url}')">Report This</button>
-                </div>
-            </div>
-        `;
-
+        const warningContent = document.createElement('div');
+        warningContent.className = 'warning-content';
+        
+        // Header
+        const header = this.createWarningHeader();
+        
+        // Body
+        const body = this.createWarningBody(data);
+        
+        // Actions
+        const actions = this.createWarningActions(data);
+        
+        warningContent.appendChild(header);
+        warningContent.appendChild(body);
+        warningContent.appendChild(actions);
+        warning.appendChild(warningContent);
+        
+        warning.setAttribute('role', 'alert');
+        warning.setAttribute('aria-live', 'assertive');
+        
         return warning;
+    }
+
+    createWarningHeader() {
+        const header = document.createElement('div');
+        header.className = 'warning-header';
+        
+        const icon = document.createElement('span');
+        icon.className = 'warning-icon';
+        icon.textContent = '⚠️';
+        
+        const title = document.createElement('span');
+        title.className = 'warning-title';
+        title.textContent = 'Suspicious Link Detected';
+        
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'warning-close';
+        closeBtn.innerHTML = '&times;';
+        closeBtn.setAttribute('aria-label', 'Close warning');
+        closeBtn.addEventListener('click', () => this.hideWarning());
+        
+        header.appendChild(icon);
+        header.appendChild(title);
+        header.appendChild(closeBtn);
+        
+        return header;
+    }
+
+    createWarningBody(data) {
+        const body = document.createElement('div');
+        body.className = 'warning-body';
+        
+        // Reason
+        const reasonP = document.createElement('p');
+        const reasonStrong = document.createElement('strong');
+        reasonStrong.textContent = 'Reason: ';
+        reasonP.appendChild(reasonStrong);
+        reasonP.appendChild(document.createTextNode(InputValidator.sanitizeText(data.reason)));
+        
+        // URL
+        const urlP = document.createElement('p');
+        const urlStrong = document.createElement('strong');
+        urlStrong.textContent = 'URL: ';
+        urlP.appendChild(urlStrong);
+        urlP.appendChild(document.createTextNode(InputValidator.sanitizeText(data.url)));
+        
+        body.appendChild(reasonP);
+        body.appendChild(urlP);
+        
+        // Educational tip
+        if (data.tip) {
+            const tipDiv = document.createElement('div');
+            tipDiv.className = 'educational-tip';
+            const tipStrong = document.createElement('strong');
+            tipStrong.textContent = '💡 Security Tip: ';
+            tipDiv.appendChild(tipStrong);
+            tipDiv.appendChild(document.createTextNode(InputValidator.sanitizeText(data.tip)));
+            body.appendChild(tipDiv);
+        }
+        
+        return body;
+    }
+
+    createWarningActions(data) {
+        const actions = document.createElement('div');
+        actions.className = 'warning-actions';
+        
+        const safeBtn = document.createElement('button');
+        safeBtn.className = 'btn-safe';
+        safeBtn.textContent = 'I Understand';
+        safeBtn.addEventListener('click', () => this.hideWarning());
+        
+        const reportBtn = document.createElement('button');
+        reportBtn.className = 'btn-report';
+        reportBtn.textContent = 'Report This Site';
+        reportBtn.addEventListener('click', () => {
+            try {
+                const sanitizedUrl = InputValidator.sanitizeURL(data.url);
+                chrome.runtime.sendMessage({
+                    action: 'reportPhishing',
+                    url: sanitizedUrl
+                });
+                this.hideWarning();
+            } catch (error) {
+                console.error('CatchThePhish: Error reporting URL:', error);
+            }
+        });
+        
+        actions.appendChild(safeBtn);
+        actions.appendChild(reportBtn);
+        
+        return actions;
     }
 
     hideWarning() {
@@ -178,23 +267,9 @@ class PhishingDetector {
     }
 }
 
-// Global function for reporting (called from warning buttons)
-window.catchThePhishReport = function(url) {
-    chrome.runtime.sendMessage({
-        action: 'reportPhishing',
-        url: url
-    });
-    
-    // Hide the warning
-    const warning = document.getElementById('catchthephish-warning');
-    if (warning) warning.remove();
-};
-
-// Initialize the detector when DOM is ready
+// Initialize when DOM is ready
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        new PhishingDetector();
-    });
+    document.addEventListener('DOMContentLoaded', () => new PhishingDetector());
 } else {
     new PhishingDetector();
 }

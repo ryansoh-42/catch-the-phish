@@ -1,34 +1,36 @@
 console.log('CatchThePhish: Background script loaded');
 
+// Import utilities
+try {
+    importScripts('utils/config.js', 'utils/validators.js', 'utils/cache.js');
+    console.log('CatchThePhish: Utilities loaded successfully');
+} catch (error) {
+    console.error('CatchThePhish: Error loading utilities:', error);
+}
+
 class BackgroundService {
     constructor() {
-        this.apiEndpoint = 'http://localhost:5000'; // Our Python backend
-        this.urlCache = new Map();
-        this.educationalTips = [
-            "Scammers often pressure you to act quickly. Stay calm and verify.",
-            "Check the URL carefully - look for misspellings or unusual characters.",
-            "Legitimate companies won't ask for passwords via email or suspicious links.",
-            "When in doubt, navigate to the official website directly instead of clicking links.",
-            "Be extra cautious with urgent requests for personal or financial information."
-        ];
+        this.apiEndpoint = CONFIG?.API?.ENDPOINT || 'http://localhost:5000';
+        this.urlCache = new URLCache({
+            maxSize: CONFIG?.CACHE?.MAX_SIZE || 200,
+            ttl: CONFIG?.CACHE?.TTL || 10 * 60 * 1000,
+            cleanupInterval: CONFIG?.CACHE?.CLEANUP_INTERVAL || 2 * 60 * 1000
+        });
         this.init();
     }
 
     init() {
-        // Listen for messages from content scripts
         chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             this.handleMessage(request, sender, sendResponse);
-            return true; // Keep message channel open for async responses
+            return true;
         });
-
         console.log('CatchThePhish: Background service initialized');
     }
 
     async handleMessage(request, sender, sendResponse) {
         try {
-            // Validate request
-            if (!request || !request.action) {
-                console.warn('CatchThePhish: Invalid request received');
+            if (!InputValidator.isValidMessage(request)) {
+                console.warn('CatchThePhish: Invalid request received', request);
                 sendResponse({ error: 'Invalid request' });
                 return;
             }
@@ -37,8 +39,7 @@ class BackgroundService {
                 case 'checkURL':
                     if (request.url) {
                         const result = await this.analyzeURL(request.url);
-                        // Only send message if tab still exists
-                        if (sender.tab && sender.tab.id) {
+                        if (sender.tab?.id) {
                             try {
                                 await chrome.tabs.sendMessage(sender.tab.id, {
                                     action: 'urlCheckResult',
@@ -76,52 +77,36 @@ class BackgroundService {
     async analyzeURL(url) {
         console.log('CatchThePhish: Analyzing URL:', url);
 
-        // Check cache first (simple 5-minute cache)
-        const cacheKey = url.toLowerCase();
+        // Validate and sanitize URL
+        if (!InputValidator.isValidURL(url)) {
+            throw new Error('Invalid URL provided for analysis');
+        }
+        const sanitizedUrl = InputValidator.sanitizeURL(url);
+        const cacheKey = sanitizedUrl.toLowerCase();
+
+        // Check cache first
         const cached = this.urlCache.get(cacheKey);
-        if (cached && Date.now() - cached.timestamp < 300000) { // 5 minutes
-            console.log('CatchThePhish: Using cached result');
-            return cached.result;
-        }
-
-        try {
-            // Perform local checks
-            const localCheck = this.performLocalChecks(url);
-            
-            // Cache the result
-            this.urlCache.set(cacheKey, {
-                result: localCheck,
-                timestamp: Date.now()
-            });
-            
-            // Simple cache cleanup (keep last 100)
-            if (this.urlCache.size > 100) {
-                const entries = Array.from(this.urlCache.entries());
-                this.urlCache.clear();
-                entries.slice(-50).forEach(([key, value]) => {
-                    this.urlCache.set(key, value);
-                });
-            }
-
-            // Always add educational tip
+        if (cached) {
+            console.log('CatchThePhish: Using cached analysis result');
             return {
-                ...localCheck,
-                tip: this.getRandomTip()
-            };
-
-            // TODO: Add API call back when backend is ready
-            // const response = await fetch(`${this.apiEndpoint}/check-url`, { ... });
-
-        } catch (error) {
-            console.error('CatchThePhish: Error analyzing URL:', error);
-            
-            // Fallback to local checks
-            const fallback = this.performLocalChecks(url);
-            return {
-                ...fallback,
-                tip: this.getRandomTip()
+                ...cached,
+                tip: this.getRandomTip(),
+                fromCache: true
             };
         }
+
+        // Perform fresh analysis
+        console.log('CatchThePhish: Performing fresh analysis');
+        const analysisResult = this.performLocalChecks(sanitizedUrl);
+        
+        // Cache the result
+        this.urlCache.set(cacheKey, analysisResult);
+
+        return {
+            ...analysisResult,
+            tip: this.getRandomTip(),
+            fromCache: false
+        };
     }
 
     performLocalChecks(url) {
@@ -136,36 +121,44 @@ class BackgroundService {
             const urlObj = new URL(url);
             const domain = urlObj.hostname.toLowerCase();
 
-            // Check for typosquatting patterns
+            // Check for typosquatting
             if (this.checkTyposquatting(domain)) {
-                checks.isSuspicious = true;
-                checks.reason = 'Domain appears to be impersonating a popular website';
-                checks.confidence = 0.8;
-                return checks;
+                return {
+                    ...checks,
+                    isSuspicious: true,
+                    reason: 'Domain appears to be impersonating a popular website',
+                    confidence: 0.8
+                };
             }
 
             // Check for suspicious characters
             if (this.checkSuspiciousCharacters(domain)) {
-                checks.isSuspicious = true;
-                checks.reason = 'Domain contains unusual characters or patterns';
-                checks.confidence = 0.7;
-                return checks;
+                return {
+                    ...checks,
+                    isSuspicious: true,
+                    reason: 'Domain contains unusual characters or patterns',
+                    confidence: 0.7
+                };
             }
 
             // Check for suspicious URL patterns
             if (this.checkSuspiciousPatterns(url)) {
-                checks.isSuspicious = true;
-                checks.reason = 'URL contains suspicious patterns commonly used in phishing';
-                checks.confidence = 0.6;
-                return checks;
+                return {
+                    ...checks,
+                    isSuspicious: true,
+                    reason: 'URL contains suspicious patterns commonly used in phishing',
+                    confidence: 0.6
+                };
             }
 
-            // Check for IP addresses instead of domains
+            // Check for IP addresses
             if (this.isIPAddress(domain)) {
-                checks.isSuspicious = true;
-                checks.reason = 'Using IP address instead of domain name';
-                checks.confidence = 0.9;
-                return checks;
+                return {
+                    ...checks,
+                    isSuspicious: true,
+                    reason: 'Using IP address instead of domain name',
+                    confidence: 0.9
+                };
             }
 
         } catch (error) {
@@ -176,54 +169,30 @@ class BackgroundService {
     }
 
     checkTyposquatting(domain) {
-        // Common targets for typosquatting
-        const popularDomains = [
-            'google.com', 'facebook.com', 'amazon.com', 'microsoft.com',
-            'apple.com', 'paypal.com', 'ebay.com', 'instagram.com',
-            'twitter.com', 'linkedin.com', 'netflix.com', 'spotify.com'
-        ];
+        const popularDomains = CONFIG?.POPULAR_DOMAINS || [];
+        const threshold = CONFIG?.DETECTION?.SIMILARITY_THRESHOLD || 0.8;
 
-        for (const legitimate of popularDomains) {
-            if (this.calculateSimilarity(domain, legitimate) > 0.8 && domain !== legitimate) {
-                return true;
-            }
-        }
-        return false;
+        return popularDomains.some(legitimate => {
+            const similarity = this.calculateSimilarity(domain, legitimate);
+            return similarity > threshold && domain !== legitimate;
+        });
     }
 
     checkSuspiciousCharacters(domain) {
-        // Check for homograph attacks (Unicode characters that look like Latin)
-        const suspiciousPatterns = [
-            /[а-я]/i, // Cyrillic characters
-            /[αβγδεζηθικλμνξοπρστυφχψω]/i, // Greek characters
-            /xn--/, // Punycode
-            /-{2,}/, // Multiple consecutive hyphens
-            /\d{4,}/ // Long sequences of numbers
-        ];
-
-        return suspiciousPatterns.some(pattern => pattern.test(domain));
+        const patterns = CONFIG?.SUSPICIOUS_CHAR_PATTERNS || [];
+        return patterns.some(pattern => pattern.test(domain));
     }
 
     checkSuspiciousPatterns(url) {
-        const suspiciousPatterns = [
-            /secure.*update/i,
-            /verify.*account/i,
-            /suspended.*account/i,
-            /click.*here.*now/i,
-            /urgent.*action/i,
-            /limited.*time/i
-        ];
-
-        return suspiciousPatterns.some(pattern => pattern.test(url));
+        const patterns = CONFIG?.SUSPICIOUS_PATTERNS || [];
+        return patterns.some(pattern => pattern.test(url));
     }
 
     isIPAddress(domain) {
-        const ipPattern = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
-        return ipPattern.test(domain);
+        return /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(domain);
     }
 
     calculateSimilarity(str1, str2) {
-        // Simple Levenshtein distance-based similarity
         const longer = str1.length > str2.length ? str1 : str2;
         const shorter = str1.length > str2.length ? str2 : str1;
         
@@ -234,19 +203,14 @@ class BackgroundService {
     }
 
     levenshteinDistance(str1, str2) {
-        const matrix = [];
+        const matrix = Array(str2.length + 1).fill().map(() => Array(str1.length + 1).fill(0));
         
-        for (let i = 0; i <= str2.length; i++) {
-            matrix[i] = [i];
-        }
-        
-        for (let j = 0; j <= str1.length; j++) {
-            matrix[0][j] = j;
-        }
+        for (let i = 0; i <= str2.length; i++) matrix[i][0] = i;
+        for (let j = 0; j <= str1.length; j++) matrix[0][j] = j;
         
         for (let i = 1; i <= str2.length; i++) {
             for (let j = 1; j <= str1.length; j++) {
-                if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+                if (str2[i - 1] === str1[j - 1]) {
                     matrix[i][j] = matrix[i - 1][j - 1];
                 } else {
                     matrix[i][j] = Math.min(
@@ -263,17 +227,15 @@ class BackgroundService {
 
     async reportPhishingURL(url) {
         try {
-            // For demo purposes, we'll just log this
-            console.log('CatchThePhish: Reporting phishing URL:', url);
+            const sanitizedUrl = InputValidator.sanitizeURL(url);
+            console.log('CatchThePhish: Reporting phishing URL:', sanitizedUrl);
             
-            // In production, this would integrate with ScamShield API
             const reportData = {
-                url: url,
+                url: sanitizedUrl,
                 timestamp: new Date().toISOString(),
                 source: 'CatchThePhish Extension'
             };
 
-            // Store locally for now
             const reports = await this.getStoredReports();
             reports.push(reportData);
             await chrome.storage.local.set({ reports: reports });
@@ -308,8 +270,8 @@ class BackgroundService {
     }
 
     getRandomTip() {
-        const randomIndex = Math.floor(Math.random() * this.educationalTips.length);
-        return this.educationalTips[randomIndex];
+        const tips = CONFIG?.EDUCATIONAL_TIPS || [];
+        return tips[Math.floor(Math.random() * tips.length)];
     }
 }
 

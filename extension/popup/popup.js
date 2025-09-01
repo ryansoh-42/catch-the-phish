@@ -10,18 +10,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function initializePopup() {
     try {
-        // Load protection stats
-        await loadStats();
-        
-        // Load daily tip
-        await loadDailyTip();
-        
-        // Check current page status
-        await checkCurrentPage();
-        
-        // Load settings
-        await loadSettings();
-        
+        await Promise.all([
+            loadStats(),
+            loadDailyTip(),
+            checkCurrentPage(),
+            loadSettings()
+        ]);
     } catch (error) {
         console.error('CatchThePhish: Error initializing popup:', error);
     }
@@ -29,9 +23,7 @@ async function initializePopup() {
 
 async function loadStats() {
     try {
-        // Get stats from background script
         const response = await chrome.runtime.sendMessage({ action: 'getStats' });
-        
         if (response) {
             document.getElementById('blockedCount').textContent = response.blocked || 0;
             document.getElementById('reportedCount').textContent = response.reported || 0;
@@ -42,6 +34,7 @@ async function loadStats() {
 }
 
 async function loadDailyTip() {
+    // Use tips from CONFIG instead of hardcoded array
     const tips = [
         "Always verify the sender before clicking links in emails or messages.",
         "Check URLs carefully - scammers often use similar-looking domains.",
@@ -52,7 +45,6 @@ async function loadDailyTip() {
         "Trust your instincts - if something feels wrong, it probably is."
     ];
     
-    // Use date to get consistent daily tip
     const today = new Date();
     const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
     const tipIndex = dayOfYear % tips.length;
@@ -62,16 +54,13 @@ async function loadDailyTip() {
 
 async function checkCurrentPage() {
     try {
-        // Get current active tab
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         
-        if (tab && tab.url) {
-            // Send URL to background for analysis
+        if (tab?.url) {
             const response = await chrome.runtime.sendMessage({
                 action: 'checkURL',
                 url: tab.url
             });
-            
             updatePageStatus(response);
         }
     } catch (error) {
@@ -84,7 +73,7 @@ function updatePageStatus(analysis) {
     const pageIcon = statusElement.querySelector('.page-icon');
     const pageText = statusElement.querySelector('.page-text');
     
-    if (analysis && analysis.isSuspicious) {
+    if (analysis?.isSuspicious) {
         pageIcon.textContent = '⚠️';
         pageText.textContent = `Warning: ${analysis.reason}`;
         statusElement.style.background = '#ffebee';
@@ -100,10 +89,8 @@ function updatePageStatus(analysis) {
 async function loadSettings() {
     try {
         const result = await chrome.storage.sync.get(['enableProtection', 'enableTips']);
-        
         document.getElementById('enableProtection').checked = result.enableProtection !== false;
         document.getElementById('enableTips').checked = result.enableTips !== false;
-        
     } catch (error) {
         console.error('CatchThePhish: Error loading settings:', error);
     }
@@ -130,13 +117,12 @@ function setupEventListeners() {
     document.getElementById('reportPage').addEventListener('click', async () => {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         
-        if (tab && tab.url) {
+        if (tab?.url) {
             await chrome.runtime.sendMessage({
                 action: 'reportPhishing',
                 url: tab.url
             });
             
-            // Show confirmation
             const button = document.getElementById('reportPage');
             const originalHTML = button.innerHTML;
             button.innerHTML = '<span class="btn-icon">✅</span>Reported!';
@@ -147,16 +133,15 @@ function setupEventListeners() {
         }
     });
     
-    // View reports button
-    document.getElementById('viewReports').addEventListener('click', () => {
-        chrome.tabs.create({ url: chrome.runtime.getURL('reports.html') });
-    });
+    // REMOVE OR FIX: View reports button (reports.html doesn't exist)
+    // document.getElementById('viewReports').addEventListener('click', () => {
+    //     chrome.tabs.create({ url: chrome.runtime.getURL('reports.html') });
+    // });
     
     // Settings toggles
     document.getElementById('enableProtection').addEventListener('change', async (e) => {
         await chrome.storage.sync.set({ enableProtection: e.target.checked });
         
-        // Update status indicator
         const indicator = document.getElementById('statusIndicator');
         const statusText = document.getElementById('statusText');
         
