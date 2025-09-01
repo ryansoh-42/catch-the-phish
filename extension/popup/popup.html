@@ -11,7 +11,6 @@
         <!-- Header -->
         <div class="header">
             <div class="logo">
-                <span class="shield-icon">🛡️</span>
                 <h1>CatchThePhish</h1>
             </div>
             <div class="status" id="status">
@@ -47,20 +46,30 @@
 
         <!-- Quick Actions -->
         <div class="actions-section">
-            <h2>Quick Actions</h2>
-            <button class="btn-action" id="reportPage">
-                <span class="btn-icon">📝</span>
-                Report This Page
-            </button>
-            <button class="btn-action" id="viewReports">
-                <span class="btn-icon">📊</span>
-                View Reports
-            </button>
+            <div class="action-card">
+                <div>
+                    <div class="action-title">Report This Page</div>
+                    <div class="action-sub">Submit this URL to ScamShield for review</div>
+                </div>
+                <button class="btn-action" id="reportPage">
+                    Report This Page to ScamShield
+                </button>
+            </div>
+
+            <div class="action-card">
+                <div>
+                    <div class="action-title">View Reports</div>
+                    <div class="action-sub">See previously submitted reports</div>
+                </div>
+                <button class="btn-action" id="viewReports">
+                    View Reports
+                </button>
+            </div>
         </div>
 
         <!-- Educational Tip -->
         <div class="tip-section">
-            <h2>💡 Security Tip</h2>
+            <h2>Security Tip</h2>
             <p id="dailyTip">Loading tip...</p>
         </div>
 

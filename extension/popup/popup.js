@@ -128,22 +128,45 @@ function setupEventListeners() {
     
     // Report page button
     document.getElementById('reportPage').addEventListener('click', async () => {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        const button = document.getElementById('reportPage');
         
-        if (tab && tab.url) {
-            await chrome.runtime.sendMessage({
-                action: 'reportPhishing',
-                url: tab.url
-            });
+        try {
+            // Check if already reported
+            if (button.classList.contains('reported')) {
+                return;
+            }
+
+            // Update button to loading state
+            button.disabled = true;
+            button.innerHTML = '<span class="btn-icon">⏳</span>Reporting...';
             
-            // Show confirmation
-            const button = document.getElementById('reportPage');
-            const originalHTML = button.innerHTML;
-            button.innerHTML = '<span class="btn-icon">✅</span>Reported!';
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
             
-            setTimeout(() => {
-                button.innerHTML = originalHTML;
-            }, 2000);
+            if (tab && tab.url) {
+                // Send report to background script
+                const response = await chrome.runtime.sendMessage({
+                    action: 'reportPhishing',
+                    url: tab.url
+                });
+
+                if (response && response.success) {
+                    // Update reported count
+                    const reportedEl = document.getElementById('reportedCount');
+                    const newCount = parseInt(reportedEl.textContent || '0') + 1;
+                    reportedEl.textContent = newCount;
+                    
+                    // Show permanent success state
+                    button.innerHTML = '<span class="btn-icon">✅</span>Reported';
+                    button.classList.add('reported');
+                    // Don't reset the button state
+                } else {
+                    throw new Error('Failed to report URL');
+                }
+            }
+        } catch (error) {
+            console.error('CatchThePhish: Error reporting page:', error);
+            button.innerHTML = '<span class="btn-icon">⚠️</span>Error';
+            button.disabled = false;
         }
     });
     
@@ -172,4 +195,29 @@ function setupEventListeners() {
     document.getElementById('enableTips').addEventListener('change', async (e) => {
         await chrome.storage.sync.set({ enableTips: e.target.checked });
     });
+}
+
+async function handlePhishingReport(url) {
+    try {
+        // Get current stats
+        const stats = await chrome.storage.local.get(['reported']);
+        const currentReported = stats.reported || 0;
+
+        // Increment reported count
+        await chrome.storage.local.set({
+            reported: currentReported + 1
+        });
+
+        // Here you would typically send the report to your backend
+        // For now, we'll just log it
+        console.log('Phishing URL reported:', url);
+
+        return {
+            success: true,
+            newCount: currentReported + 1
+        };
+    } catch (error) {
+        console.error('Failed to handle phishing report:', error);
+        throw error;
+    }
 }
