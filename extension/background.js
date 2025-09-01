@@ -155,9 +155,9 @@ class BackgroundService {
             // 2. Suspicious TLD Check (High Priority)
             const tld = domain.substring(domain.lastIndexOf('.'));
             if (CONFIG?.SUSPICIOUS_TLDS?.includes(tld)) {
-                return {
-                    ...checks,
-                    isSuspicious: true,
+                    return {
+                        ...checks,
+                        isSuspicious: true,
                     reason: `Domain uses suspicious top-level domain (${tld})`,
                     confidence: CONFIG?.DETECTION?.CONFIDENCE_WEIGHTS?.SUSPICIOUS_TLD || 0.8
                 };
@@ -219,7 +219,7 @@ class BackgroundService {
                 };
             }
 
-            // 8. Enhanced Character Pattern Check
+            // 8. Enhanced Character Pattern Check (Domain only)
             const charResult = this.detectSuspiciousCharacters(domain);
             if (charResult.detected) {
                 return {
@@ -230,14 +230,25 @@ class BackgroundService {
                 };
             }
 
-            // 9. Additional Heuristics
-            const heuristicResult = this.applyAdditionalHeuristics(domain);
-            if (heuristicResult.detected) {
+            // 9. Domain Length and Structure Heuristics
+            const structureResult = this.analyzedomainStructure(domain);
+            if (structureResult.detected) {
                 return {
                     ...checks,
                     isSuspicious: true,
-                    reason: heuristicResult.reason,
-                    confidence: heuristicResult.confidence
+                    reason: structureResult.reason,
+                    confidence: structureResult.confidence
+                };
+            }
+
+            // 10. Keyword-based Detection (for suspicious domain names)
+            const keywordResult = this.detectSuspiciousKeywords(domain);
+            if (keywordResult.detected) {
+                return {
+                    ...checks,
+                    isSuspicious: true,
+                    reason: keywordResult.reason,
+                    confidence: 0.7
                 };
             }
 
@@ -329,11 +340,20 @@ class BackgroundService {
         const protectedDomains = CONFIG?.PROTECTED_DOMAINS || [];
         const baseThreshold = CONFIG?.DETECTION?.SIMILARITY_THRESHOLD || 0.65;
         
+        // CRITICAL FIX: Check if the normalized domain IS a protected domain first
+        if (protectedDomains.includes(normalizedDomain)) {
+            // This is a legitimate protected domain, don't flag it
+            return { detected: false };
+        }
+        
+        // Also check if original domain is a protected domain
+        if (protectedDomains.includes(originalDomain.toLowerCase())) {
+            return { detected: false };
+        }
+        
         for (const protectedDomain of protectedDomains) {
-            // Skip exact matches after normalization (prevents www.dbs.com.sg false positives)
+            // Skip exact matches (redundant now, but keeping for safety)
             if (normalizedDomain === protectedDomain) continue;
-            
-            // Also skip if original domain is exactly the protected domain
             if (originalDomain.toLowerCase() === protectedDomain) continue;
             
             const similarity = this.calculateSimilarity(normalizedDomain, protectedDomain);
@@ -394,6 +414,7 @@ class BackgroundService {
     }
 
     detectSuspiciousCharacters(domain) {
+        // First check basic character patterns
         const charPatterns = CONFIG?.SUSPICIOUS_CHAR_PATTERNS || [];
         
         for (const pattern of charPatterns) {
@@ -412,19 +433,38 @@ class BackgroundService {
                     reason = 'Domain contains Greek characters that may mimic Latin letters';
                 } else if (pattern.source.includes('xn--')) {
                     reason = 'Domain uses punycode encoding (potential homograph attack)';
-                } else if (pattern.source.includes('\\d{4,}')) {
-                    // Only flag truly suspicious long number sequences
-                    if (!/^[a-z]+-\d{4,}$/.test(domain)) { // Don't flag legitimate patterns like "example-2024"
-                        reason = 'Domain contains unusually long number sequences';
-                    } else {
-                        continue;
-                    }
+                } else if (pattern.source.includes('\\d{5,}')) {
+                    reason = 'Domain contains unusually long number sequences';
+                } else if (pattern.source.includes('[0-9][a-z][0-9]')) {
+                    reason = 'Domain has suspicious alternating number-letter patterns';
                 } else if (pattern.source.includes('-{2,}')) {
-                    // Only flag multiple consecutive hyphens in suspicious contexts
-                    if (!domain.includes('--')) { // Double check the pattern actually exists
-                        continue;
-                    }
                     reason = 'Domain contains multiple consecutive hyphens';
+                } else if (pattern.source.includes('[il1|]{3,}')) {
+                    reason = 'Domain contains multiple character substitutions';
+                }
+                
+                return {
+                    detected: true,
+                    reason: reason
+                };
+            }
+        }
+
+        // Then check domain-specific suspicious patterns
+        const domainPatterns = CONFIG?.DOMAIN_SUSPICIOUS_PATTERNS || [];
+        
+        for (const pattern of domainPatterns) {
+            if (pattern.test(domain)) {
+                let reason = 'Domain structure appears suspicious';
+                
+                if (pattern.source.includes('^[0-9]+-[a-z]+')) {
+                    reason = 'Domain uses suspicious number-name pattern (e.g., 123-bank.com)';
+                } else if (pattern.source.includes('[a-z]{2,}[0-9]{2,}[a-z]{2,}')) {
+                    reason = 'Domain has suspicious mixed character patterns';
+                } else if (pattern.source.includes('\\1{4,}')) {
+                    reason = 'Domain contains repeated characters';
+                } else if (pattern.source.includes('\\1\\2{2,}')) {
+                    reason = 'Domain contains repeated character sequences';
                 }
                 
                 return {
@@ -452,53 +492,97 @@ class BackgroundService {
         return cyrillicChars.length > 0 && latinChars.length > cyrillicChars.length;
     }
 
-    applyAdditionalHeuristics(domain) {
+    // New method for analyzing domain structure based on your suggestions
+    analyzedomainStructure(domain) {
         const parts = domain.split('.');
         const maxSubdomains = CONFIG?.DETECTION?.MAX_SUBDOMAIN_LEVELS || 4;
         const longDomainThreshold = CONFIG?.DETECTION?.LONG_DOMAIN_THRESHOLD || 30;
-        const suspiciousDigitRatio = CONFIG?.DETECTION?.SUSPICIOUS_DIGIT_RATIO || 0.3;
         
-        // Check for excessive subdomains (but exclude common patterns)
+        // Check for excessive subdomains (enhanced logic)
         if (parts.length > maxSubdomains) {
-            // Don't flag common legitimate patterns like www.secure.bank.com
+            // Don't flag common legitimate patterns
             const hasLegitimateSubdomains = parts.some(part => 
-                ['www', 'secure', 'login', 'm', 'mobile', 'app', 'api', 'mail'].includes(part)
+                ['www', 'secure', 'login', 'm', 'mobile', 'app', 'api', 'mail', 'cdn', 'static'].includes(part)
             );
             
             if (!hasLegitimateSubdomains) {
                 return {
                     detected: true,
-                    reason: 'Domain has suspicious number of subdomains',
-                    confidence: CONFIG?.DETECTION?.CONFIDENCE_WEIGHTS?.EXCESSIVE_SUBDOMAINS || 0.6
+                    reason: 'Domain has excessive subdomain levels (potential subdomain abuse)',
+                    confidence: CONFIG?.DETECTION?.CONFIDENCE_WEIGHTS?.EXCESSIVE_SUBDOMAINS || 0.75
                 };
             }
         }
         
-        // Check for very long domain names (but exclude legitimate long domains)
-        const fullDomain = domain;
-        if (fullDomain.length > longDomainThreshold) {
-            // Don't flag if it's just a long but legitimate-looking domain
-            const hasRepeatingPatterns = /(.{3,})\1{2,}/.test(fullDomain); // Repeated patterns
-            const hasRandomChars = /[0-9]{3,}/.test(fullDomain) && /[a-z]{10,}/i.test(fullDomain);
+        // Enhanced domain length check
+        if (domain.length > longDomainThreshold) {
+            // More sophisticated analysis of long domains
+            const hasRepeatingPatterns = /(.{3,})\1{2,}/.test(domain);
+            const hasRandomChars = /[a-z]{15,}/i.test(domain) && /\d{3,}/.test(domain);
+            const isObviouslyGenerated = /[a-z0-9]{20,}/i.test(domain) && !/[aeiou]{2,}/i.test(domain);
             
-            if (hasRepeatingPatterns || hasRandomChars) {
+            if (hasRepeatingPatterns || hasRandomChars || isObviouslyGenerated) {
                 return {
                     detected: true,
-                    reason: 'Domain name is unusually long with suspicious patterns',
-                    confidence: CONFIG?.DETECTION?.CONFIDENCE_WEIGHTS?.LONG_DOMAIN || 0.55
+                    reason: 'Domain name is unusually long and appears to be generated',
+                    confidence: CONFIG?.DETECTION?.CONFIDENCE_WEIGHTS?.LONG_DOMAIN || 0.65
                 };
             }
         }
         
-        // Check for domains with mixed numbers and letters in suspicious patterns
+        return { detected: false };
+    }
+
+    // New method for keyword-based detection in domain names
+    detectSuspiciousKeywords(domain) {
+        const suspiciousKeywords = [
+            'login', 'secure', 'update', 'verify', 'account', 'suspended', 
+            'urgent', 'security', 'alert', 'warning', 'blocked', 'expired',
+            'confirm', 'activate', 'unlock', 'restore', 'support', 'help',
+            'bank', 'payment', 'paypal', 'amazon', 'microsoft', 'apple',
+            'google', 'facebook', 'instagram', 'twitter', 'linkedin'
+        ];
+        
+        // Only flag if domain contains suspicious keywords in suspicious contexts
+        const domainWithoutTLD = domain.split('.')[0];
+        
+        for (const keyword of suspiciousKeywords) {
+            // Look for keyword in suspicious contexts
+            const suspiciousPatterns = [
+                new RegExp(`${keyword}-[a-z]+`, 'i'),     // login-bank, secure-update
+                new RegExp(`[a-z]+-${keyword}`, 'i'),     // mybank-login, update-secure  
+                new RegExp(`${keyword}[0-9]+`, 'i'),      // login123, secure456
+                new RegExp(`[0-9]+${keyword}`, 'i')       // 123login, 456secure
+            ];
+            
+            for (const pattern of suspiciousPatterns) {
+                if (pattern.test(domainWithoutTLD)) {
+                    return {
+                        detected: true,
+                        reason: `Domain name contains suspicious keyword pattern: "${keyword}"`
+                    };
+                }
+            }
+        }
+        
+        return { detected: false };
+    }
+
+    // Keep legacy method for backward compatibility but improve it
+    applyAdditionalHeuristics(domain) {
+        // This method is now used for edge cases not covered by the main structure analysis
+        const parts = domain.split('.');
+        const suspiciousDigitRatio = CONFIG?.DETECTION?.SUSPICIOUS_DIGIT_RATIO || 0.4; // Increased threshold
+        
+        // Check for domains with suspicious digit patterns (improved logic)
         const mainDomain = parts[0] || '';
-        if (mainDomain.length > 8 && /\d/.test(mainDomain) && /[a-z]/i.test(mainDomain)) {
+        if (mainDomain.length > 6 && /\d/.test(mainDomain) && /[a-z]/i.test(mainDomain)) {
             const digitRatio = (mainDomain.match(/\d/g) || []).length / mainDomain.length;
             
-            // More sophisticated check - don't flag legitimate patterns like "abc123"
-            const hasObviousPattern = /^[a-z]+\d+$|^\d+[a-z]+$/i.test(mainDomain);
+            // More sophisticated patterns to avoid false positives
+            const isLegitimatePattern = /^[a-z]+\d{1,3}$|^[a-z]+-\d{1,3}$|^v\d+/i.test(mainDomain);
             
-            if (digitRatio > suspiciousDigitRatio && !hasObviousPattern) {
+            if (digitRatio > suspiciousDigitRatio && !isLegitimatePattern) {
                 return {
                     detected: true,
                     reason: 'Domain contains suspicious mix of numbers and letters',

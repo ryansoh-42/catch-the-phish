@@ -28,9 +28,11 @@ const CONFIG = {
             SUBSTRING_ABUSE: 0.8,
             SUSPICIOUS_PATTERN: 0.7,
             SUSPICIOUS_CHARS: 0.65,
-            LONG_DOMAIN: 0.55,
-            EXCESSIVE_SUBDOMAINS: 0.6,
-            SUSPICIOUS_DIGITS: 0.6
+            LONG_DOMAIN: 0.65,
+            EXCESSIVE_SUBDOMAINS: 0.75,
+            SUSPICIOUS_DIGITS: 0.6,
+            DOMAIN_STRUCTURE: 0.7,
+            SUSPICIOUS_KEYWORDS: 0.75
         }
     },
     
@@ -91,16 +93,24 @@ const CONFIG = {
         '.accountant', '.science', '.work', '.cricket', '.space'
     ],
 
-    // Suspicious character patterns
+    // Suspicious character patterns (DOMAIN ONLY - not URL paths)
     SUSPICIOUS_CHAR_PATTERNS: [
         /[а-я]/i, // Cyrillic characters
         /[αβγδεζηθικλμνξοπρστυφχψω]/i, // Greek characters
         /[аеорсухі]/i, // Common Cyrillic lookalikes
         /xn--/, // Punycode domains
         /-{2,}/, // Multiple consecutive hyphens
-        /\d{4,}/, // Long number sequences (4+)
-        /[0-9]{2,}/, // 2+ consecutive numbers (catches g00gle)
-        /[il1|]/g // Common character substitutions
+        /\d{5,}/, // Very long number sequences (5+ digits) - reduced false positives
+        /[0-9][a-z][0-9]/i, // Suspicious alternating number-letter-number patterns
+        /[il1|]{3,}/i // Multiple character substitutions (3+ in a row)
+    ],
+
+    // Enhanced domain-specific patterns for better detection
+    DOMAIN_SUSPICIOUS_PATTERNS: [
+        /^[0-9]+-[a-z]+\.(com|net|org)$/i, // 123-bank.com pattern
+        /[a-z]{2,}[0-9]{2,}[a-z]{2,}/i, // Mixed suspicious patterns like ab12cd
+        /([a-z])\1{4,}/i, // Repeated characters (5+ times) like aaaaa
+        /(.)(.)\1\2{2,}/i // Repeated character pairs like abababab
     ],
 
     // Homograph detection patterns

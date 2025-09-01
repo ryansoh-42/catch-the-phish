@@ -1,11 +1,3 @@
-// Import utilities
-try {
-    importScripts('utils/config.js');
-    console.log('CatchThePhish: Utilities loaded successfully');
-} catch (error) {
-    console.error('CatchThePhish: Error loading utilities:', error);
-}
-
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('CatchThePhish: Popup loaded');
     
