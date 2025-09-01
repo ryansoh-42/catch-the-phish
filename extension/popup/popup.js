@@ -1,3 +1,11 @@
+// Import utilities
+try {
+    importScripts('utils/config.js');
+    console.log('CatchThePhish: Utilities loaded successfully');
+} catch (error) {
+    console.error('CatchThePhish: Error loading utilities:', error);
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('CatchThePhish: Popup loaded');
     
@@ -35,15 +43,7 @@ async function loadStats() {
 
 async function loadDailyTip() {
     // Use tips from CONFIG instead of hardcoded array
-    const tips = [
-        "Always verify the sender before clicking links in emails or messages.",
-        "Check URLs carefully - scammers often use similar-looking domains.",
-        "Be suspicious of urgent requests for personal information.",
-        "When in doubt, navigate to websites directly rather than clicking links.",
-        "Look for HTTPS and valid security certificates on websites.",
-        "Scammers often create fake urgency to pressure quick decisions.",
-        "Trust your instincts - if something feels wrong, it probably is."
-    ];
+    const tips = CONFIG?.EDUCATIONAL_TIPS || [];
     
     const today = new Date();
     const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
