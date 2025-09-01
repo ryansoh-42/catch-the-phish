@@ -18,11 +18,14 @@ class BackgroundService {
         
         // Simple telemetry tracking
         this.stats = {
-            urlsScanned: 0,
-            urlsReported: 0,
             threatsBlocked: 0,
-            lastReset: Date.now()
+            urlsReported: 0,
+            urlsScanned: 0
         };
+        
+        // Add page state tracking
+        this.pageStates = new Map(); // Track scan states per tab
+        this.realtimeThreats = new Map(); // Track real-time threats per tab
         
         this.init();
     }
@@ -46,7 +49,13 @@ class BackgroundService {
             switch (request.action) {
                 case 'checkURL':
                     if (request.url) {
-                        const result = await this.analyzeURL(request.url);
+                        const result = await this.analyzeURL(request.url); // Real scan (count it)
+                        
+                        // Record real-time threat if found
+                        if (result.isSuspicious && sender.tab?.id) {
+                            this.recordRealtimeThreat(sender.tab.id, request.url, result);
+                        }
+                        
                         if (sender.tab?.id) {
                             try {
                                 await chrome.tabs.sendMessage(sender.tab.id, {
@@ -59,6 +68,25 @@ class BackgroundService {
                         }
                     }
                     break;
+
+                case 'getPageStatus':  // New action for popup
+                    if (request.tabId && request.url) {
+                        const status = this.getPageStatus(request.tabId, request.url);
+                        sendResponse(status);
+                    } else {
+                        sendResponse({
+                            status: 'needs_scan',
+                            message: 'Click to scan this website',
+                            icon: '🔍',
+                            needsScan: true
+                        });
+                    }
+                    break;
+
+                case 'scanCurrentPage':
+                    // Handle this asynchronously
+                    this.handleScanCurrentPage(request, sender, sendResponse);
+                    return; // Don't call sendResponse here
 
                 case 'reportPhishing':
                     if (request.url) {
@@ -87,17 +115,132 @@ class BackgroundService {
         }
     }
 
-    async analyzeURL(url) {
+    async handleScanCurrentPage(request, sender, sendResponse) {
+        console.log('🔍 CatchThePhish: scanCurrentPage received:', request);
+        console.log('🔍 URL:', request.url);
+        console.log('🔍 TabID:', request.tabId);
+        console.log('🔍 Sender:', sender);
+        
+        // Use tabId from request instead of sender.tab.id
+        if (!request.url || !request.tabId) {
+            console.error('❌ CatchThePhish: Missing URL or tab ID');
+            console.error('❌ URL check:', !!request.url, 'TabID check:', !!request.tabId);
+            sendResponse({ 
+                success: false,
+                isSuspicious: false, 
+                reason: 'Unable to scan page - missing information' 
+            });
+            return;
+        }
+
+        try {
+            console.log('🚀 CatchThePhish: Starting comprehensive scan for:', request.url);
+            
+            // 1. First do local analysis
+            const localResult = await this.analyzeURL(request.url, true);
+            console.log('📊 CatchThePhish: Local result:', localResult);
+            
+            // 2. Try comprehensive backend scan
+            let finalResult = localResult;
+            let backendResult = null;
+            
+            try {
+                // Get links and call backend - use request.tabId instead of sender.tab.id
+                console.log('🔗 CatchThePhish: Extracting links from tab:', request.tabId);
+                const links = await this.extractLinksFromPage(request.tabId);
+                console.log('🔗 CatchThePhish: Extracted links:', links);
+                
+                console.log('🌐 CatchThePhish: Calling backend with:', {
+                    page_url: request.url,
+                    extracted_links: links.slice(0, 10)
+                });
+                
+                backendResult = await this.performComprehensiveScan(request.url, links);
+                console.log('🌐 CatchThePhish: Backend result:', backendResult);
+                
+                if (backendResult.success) {
+                    // Use backend result if successful
+                    console.log('✅ CatchThePhish: Using backend result');
+                    finalResult = {
+                        isSuspicious: backendResult.is_suspicious,
+                        confidence: backendResult.confidence,
+                        reason: backendResult.reason,
+                        scanType: 'comprehensive',
+                        links_scanned: backendResult.links_scanned,
+                        suspicious_links_found: backendResult.suspicious_links_found,
+                        suspicious_links: backendResult.suspicious_links,
+                        scan_summary: backendResult.scan_summary,
+                        success: true
+                    };
+                } else {
+                    console.log('⚠️ CatchThePhish: Backend returned success: false, using local result');
+                }
+            } catch (backendError) {
+                console.warn('⚠️ CatchThePhish: Backend scan failed, using local result:', backendError);
+                // Keep local result as fallback
+            }
+            
+            // 🆕 Update stats using backend scan results
+            if (backendResult && backendResult.success && backendResult.links_scanned !== undefined) {
+                // Add the scanned links to total count
+                this.stats.urlsScanned += backendResult.links_scanned;
+                // Add the suspicious links to blocked count
+                this.stats.threatsBlocked += backendResult.suspicious_links_found || 0;
+            } else {
+                // Fallback for local-only scans
+                this.stats.urlsScanned++;
+                if (finalResult.isSuspicious) {
+                    this.stats.threatsBlocked++;
+                }
+            }
+
+            console.log('📊 Updated stats after scan:', {
+                urlsScanned: this.stats.urlsScanned,
+                threatsBlocked: this.stats.threatsBlocked,
+                urlsReported: this.stats.urlsReported,
+                backendData: {
+                    links_scanned: backendResult?.links_scanned,
+                    suspicious_links_found: backendResult?.suspicious_links_found
+                }
+            });
+            
+            // Store scan result - use request.tabId
+            this.pageStates.set(request.tabId, {
+                url: request.url,
+                result: finalResult,
+                scanned: true,
+                timestamp: Date.now()
+            });
+            
+            console.log('📤 CatchThePhish: Sending final result:', finalResult);
+            sendResponse(finalResult);
+            
+        } catch (error) {
+            console.error('💥 CatchThePhish: Scan failed completely:', error);
+            sendResponse({ 
+                success: false,
+                isSuspicious: false, 
+                reason: 'Scan failed - please try again',
+                error: true 
+            });
+        }
+    }
+
+    async analyzeURL(url, fromPopup = false) {
         console.log('CatchThePhish: Analyzing URL:', url);
 
         if (!InputValidator.isValidURL(url)) {
             throw new Error('Invalid URL provided for analysis');
         }
         const sanitizedUrl = InputValidator.sanitizeURL(url);
+        if (!sanitizedUrl) return { isSuspicious: false, reason: 'Invalid URL' };
+        
         const cacheKey = sanitizedUrl.toLowerCase();
 
-        // Increment scanned count
-        this.stats.urlsScanned++;
+        // Only increment scanned count for actual user interactions, not popup checks
+        if (!fromPopup) {
+            this.stats.urlsScanned++;
+        }
 
         // Check cache first
         const cached = this.urlCache.get(cacheKey);
@@ -110,20 +253,61 @@ class BackgroundService {
             };
         }
 
-        // Perform analysis
-        console.log('CatchThePhish: Performing fresh analysis');
-        const analysisResult = this.performEnhancedLocalChecks(sanitizedUrl);
+        // Perform local analysis first
+        console.log('CatchThePhish: Performing local analysis');
+        const localResult = this.performEnhancedLocalChecks(sanitizedUrl);
+        
+        // 🆕 Smart backend integration with clear source attribution
+        let finalResult = localResult;
+        
+        if (this.shouldCallBackend(localResult, sanitizedUrl)) {
+            console.log('CatchThePhish: Local analysis uncertain - consulting backend');
+            const serverResult = await this.performServerAnalysis(sanitizedUrl, localResult);
+            
+            if (serverResult.serverEnhanced) {
+                console.log('CatchThePhish: Server enhanced the analysis');
+                
+                // 🔑 KEY FIX: Use server explanation completely, don't mix with local
+                finalResult = {
+                    isSuspicious: serverResult.isSuspicious,
+                    confidence: serverResult.confidence,
+                    reason: serverResult.reason, // 📝 This is now the server's explanation
+                    threatType: serverResult.threatType,
+                    url: sanitizedUrl,
+                    serverEnhanced: true,
+                    analysisSource: 'server', // 🆕 Clear source attribution
+                    localConfidence: localResult.confidence, // Keep for debugging
+                    localReason: localResult.reason // Keep for debugging
+                };
+            } else {
+                console.log('CatchThePhish: Server unavailable, using local result');
+                finalResult = {
+                    ...localResult,
+                    serverAttempted: true,
+                    analysisSource: 'local_fallback', // 🆕 Clear source attribution
+                    reason: localResult.reason // Remove: `⚡ Local Detection: ${localResult.reason}`
+                };
+            }
+        } else {
+            console.log('CatchThePhish: Local analysis sufficient - skipping backend');
+            finalResult = {
+                ...localResult,
+                backendSkipped: true,
+                analysisSource: 'local_confident', // 🆕 Clear source attribution
+                reason: localResult.reason // Remove: `⚡ Local Detection: ${localResult.reason}`
+            };
+        }
         
         // Update statistics if threat detected
-        if (analysisResult.isSuspicious) {
+        if (finalResult.isSuspicious) {
             this.stats.threatsBlocked++;
         }
         
         // Cache the result
-        this.urlCache.set(cacheKey, analysisResult);
+        this.urlCache.set(cacheKey, finalResult);
 
         return {
-            ...analysisResult,
+            ...finalResult,
             tip: this.getRandomTip(),
             fromCache: false
         };
@@ -640,8 +824,86 @@ class BackgroundService {
         return false;
     }
 
+    shouldCallBackend(localResult, url) {
+        // Only call backend for uncertain cases
+        if (localResult.isSuspicious && localResult.confidence >= 0.75) {
+            return false; // Trust local analysis at 75%+ confidence
+        }
+        
+        if (!localResult.isSuspicious && this.isKnownSafeDomain(url)) {
+            return false; // Known safe domain
+        }
+        
+        // Call backend only for genuinely uncertain cases
+        return (
+            (localResult.isSuspicious && localResult.confidence < 0.75) ||
+            (!localResult.isSuspicious && !this.isKnownSafeDomain(url))
+        );
+    }
 
+    async performServerAnalysis(url, localResult) {
+        try {
+            const response = await fetch('http://localhost:8000/url-analysis/analyze-url', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    url: url,
+                    confidence: localResult.confidence,
+                    reason: this.encodeReason(localResult.reason)
+                })
+            });
 
+            if (response.ok) {
+                const result = await response.json();
+                console.log('CatchThePhish: Server response:', result);
+                
+                return {
+                    isSuspicious: result.suspicious,
+                    confidence: result.confidence,
+                    reason: this.cleanReasonForUser(result.reason), // Clean up server responses
+                    threatType: result.type,
+                    serverEnhanced: true
+                };
+            } else {
+                console.warn('CatchThePhish: Server returned error:', response.status);
+            }
+        } catch (error) {
+            console.warn('CatchThePhish: Server unavailable:', error.message);
+        }
+        
+        return { serverAvailable: false };
+    }
+
+    // Encode reasons to short codes to reduce payload
+    encodeReason(reason) {
+        const reasonMap = {
+            'Using IP address instead of domain name': 'ip_addr',
+            'Domain uses suspicious top-level domain': 'bad_tld',
+            'Contains suspicious keywords': 'sus_keywords',
+            'Potential impersonation': 'typo_detected',
+            'Domain contains suspicious subdomain patterns': 'bad_subdomain'
+        };
+        
+        for (const [fullReason, code] of Object.entries(reasonMap)) {
+            if (reason.includes(fullReason)) return code;
+        }
+        return 'other';
+    }
+
+    // Helper to check if a domain is known to be safe (e.g., from a trusted list)
+    isKnownSafeDomain(url) {
+        try {
+            const domain = new URL(url).hostname.toLowerCase();
+            const trustedDomains = CONFIG?.PROTECTED_DOMAINS || [];
+            
+            // Check if it's an exact match or subdomain of trusted domain
+            return trustedDomains.some(trusted => 
+                domain === trusted || domain.endsWith('.' + trusted)
+            );
+        } catch (error) {
+            return false;
+        }
+    }
 
 
     getRandomTip() {
@@ -703,13 +965,15 @@ class BackgroundService {
 
     async getProtectionStats() {
         try {
-            return {
+            const stats = {
                 // Simple telemetry
                 blocked: this.stats.threatsBlocked,
                 reported: this.stats.urlsReported,
                 totalScanned: this.stats.urlsScanned,
                 version: '1.0.0'
             };
+            console.log('📊 Returning stats:', stats);
+            return stats;
         } catch (error) {
             console.error('CatchThePhish: Error getting stats:', error);
             return { error: error.message };
@@ -725,6 +989,106 @@ class BackgroundService {
             lastReset: Date.now()
         };
         console.log('CatchThePhish: Statistics reset');
+    }
+
+    cleanReasonForUser(serverReason) {
+        // Remove technical prefixes and make user-friendly
+        return serverReason
+            .replace(/^🛡️ Server Confirmed: /, '')
+            .replace(/^🛡️ Server Alert: /, '')
+            .replace(/^🔍 Server Analysis: /, '')
+            .replace(/^⚠️ Server Error: /, '')
+            .replace(/Local analysis detected suspicious patterns \(confidence: \d+%\)/, 'This website looks suspicious')
+            .replace(/security vendors/, 'security experts')
+            .replace(/malicious vendors/, 'security experts');
+    }
+
+    // Track real-time threats detected on a page
+    recordRealtimeThreat(tabId, url, threat) {
+        if (!this.realtimeThreats.has(tabId)) {
+            this.realtimeThreats.set(tabId, []);
+        }
+        
+        const threats = this.realtimeThreats.get(tabId);
+        // Avoid duplicates
+        if (!threats.some(t => t.url === url)) {
+            threats.push({
+                url: url,
+                threat: threat,
+                timestamp: Date.now()
+            });
+        }
+    }
+    
+    // Get page security status
+    getPageStatus(tabId, pageUrl) {
+        const pageState = this.pageStates.get(tabId);
+        const realtimeThreats = this.realtimeThreats.get(tabId) || [];
+        
+        // Check if there are real-time threats on this page
+        if (realtimeThreats.length > 0) {
+            return {
+                status: 'threats_detected',
+                message: `${realtimeThreats.length} suspicious link${realtimeThreats.length > 1 ? 's' : ''} found on this page`,
+                icon: '⚠️',
+                threats: realtimeThreats,
+                needsScan: false
+            };
+        }
+        
+        // Check if page was manually scanned
+        if (pageState?.scanned && pageState?.url === pageUrl) {
+            const timeSince = Date.now() - pageState.timestamp;
+            const minutesAgo = Math.floor(timeSince / (1000 * 60));
+            
+            return {
+                status: pageState.result.isSuspicious ? 'dangerous' : 'safe',
+                message: pageState.result.isSuspicious 
+                    ? pageState.result.reason 
+                    : `Scanned ${minutesAgo < 1 ? 'just now' : `${minutesAgo} minute${minutesAgo > 1 ? 's' : ''} ago`}`,
+                icon: pageState.result.isSuspicious ? '🚨' : '✅',
+                result: pageState.result,
+                needsScan: false
+            };
+        }
+        
+        // Default: needs scanning
+        return {
+            status: 'needs_scan',
+            message: 'Click to scan this website for threats',
+            icon: '🔍',
+            needsScan: true
+        };
+    }
+
+    async extractLinksFromPage(tabId) {
+        try {
+            const links = await chrome.tabs.sendMessage(tabId, {
+                action: 'extractAllLinks'
+            });
+            return links || [];
+        } catch (error) {
+            console.warn('Could not extract links from page:', error);
+            return [];
+        }
+    }
+
+    async performComprehensiveScan(pageUrl, links) {
+        try {
+            const response = await fetch('http://localhost:8000/url-analysis/scan-page', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    page_url: pageUrl,
+                    extracted_links: links.slice(0, 10) // Limit to 10 links
+                })
+            });
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Backend comprehensive scan failed:', error);
+            throw error;
+        }
     }
 }
 

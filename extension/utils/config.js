@@ -146,7 +146,7 @@ const CONFIG = {
         ALLOWED_PROTOCOLS: ['http:', 'https:'],
         MAX_TEXT_LENGTH: 500,
         DANGEROUS_PARAMS: ['javascript', 'vbscript', 'data', 'file'],
-        VALID_ACTIONS: ['checkURL', 'reportPhishing', 'getStats', 'resetStats']
+        VALID_ACTIONS: ['checkURL', 'reportPhishing', 'getStats', 'resetStats', 'scanCurrentPage', 'getPageStatus']
     }
 };
 

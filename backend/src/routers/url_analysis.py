@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from models import URLAnalysisRequest, URLAnalysisResponse, ThreatType
-from services import VirusTotalService
+from services import VirusTotalService, PageScannerService
 from config import logger
 
 router = APIRouter(
@@ -82,6 +82,8 @@ async def analyze_url(request: URLAnalysisRequest):
             reason=f"⚠️ Server Error: Using local analysis - {_enhance_client_reason(request.reason, str(request.url))}",
             type=ThreatType.SUSPICIOUS if request.confidence > 0.6 else ThreatType.SAFE
         )
+    
+
 
 def _enhance_client_reason(encoded_reason: str, url: str) -> str:
     """Convert encoded reasons to user-friendly explanations"""
@@ -102,3 +104,71 @@ def _enhance_client_reason(encoded_reason: str, url: str) -> str:
         enhanced += " (⚠️ Targets Singapore users - report to ScamShield)"
     
     return enhanced
+
+@router.post("/scan-page", response_model=dict)
+async def scan_page_comprehensive(request: dict):
+    """
+    Comprehensive page scanning endpoint - Returns only client-needed data
+    """
+    try:
+        page_url = request.get("page_url")
+        extracted_links = request.get("extracted_links", [])
+        
+        if not page_url:
+            raise HTTPException(status_code=400, detail="page_url is required")
+        
+        logger.info(f"🔍 Comprehensive scan request for: {page_url}")
+        logger.info(f"🔗 Extracted links count: {len(extracted_links)}")
+        logger.info(f"🔗 Extracted links: {extracted_links[:5]}")  # Log first 5 links
+        
+        scanner = PageScannerService()
+        results = await scanner.scan_page_comprehensive(page_url, extracted_links)
+        
+        logger.info(f"📊 Scan results: {results}")
+        
+        # Return only what the client needs
+        response_data = {
+            "success": True,
+            "is_suspicious": results["overall_risk"] in ["medium", "high"],
+            "confidence": 0.8 if results["overall_risk"] == "high" else 0.6 if results["overall_risk"] == "medium" else 0.3,
+            "reason": _generate_user_friendly_reason(results),
+            "links_scanned": results["links_analyzed"],
+            "suspicious_links_found": len(results["suspicious_links"]),
+            "suspicious_links": [
+                {
+                    "url": link["url"],
+                    "reason": link["reason"]
+                }
+                for link in results["suspicious_links"][:5]  # Limit to 5 for UI
+            ],
+            "scan_summary": _generate_scan_summary(results)
+        }
+        
+        logger.info(f"📤 Sending response: {response_data}")
+        return response_data
+        
+    except Exception as e:
+        logger.error(f"💥 Page scan failed: {str(e)}")
+        return {
+            "success": False,
+            "is_suspicious": False,
+            "confidence": 0.0,
+            "reason": "Scan failed - please try again",
+            "links_scanned": 0,
+            "suspicious_links_found": 0,
+            "suspicious_links": [],
+            "scan_summary": "Unable to complete scan"
+        }
+
+def _generate_user_friendly_reason(results):
+    """Generate simple, user-friendly explanations"""
+    if results["overall_risk"] == "high":
+        return f"🚨 High risk detected - found {len(results['suspicious_links'])} suspicious links"
+    elif results["overall_risk"] == "medium":
+        return f"⚠️ Some concerns found - {len(results['suspicious_links'])} potentially suspicious links detected"
+    else:
+        return f"✅ Scan complete - checked {results['links_analyzed']} links, no major threats found"
+
+def _generate_scan_summary(results):
+    """Generate a brief summary for display"""
+    return f"Scanned {results['links_analyzed']} links, found {len(results['suspicious_links'])} suspicious"

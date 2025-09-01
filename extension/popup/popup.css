@@ -284,3 +284,40 @@ input:checked + .toggle-slider:before {
     color: #666;
     font-size: 12px;
 }
+
+.threat-details {
+    margin-top: 10px;
+    padding: 10px;
+    background: #fff3cd;
+    border-radius: 5px;
+    border-left: 4px solid #ffc107;
+}
+
+.threat-item {
+    margin-bottom: 8px;
+    padding: 5px;
+    background: white;
+    border-radius: 3px;
+}
+
+.threat-url {
+    font-weight: bold;
+    font-size: 12px;
+    color: #856404;
+    word-break: break-all;
+}
+
+.threat-reason {
+    font-size: 11px;
+    color: #6c757d;
+    margin-top: 2px;
+}
+
+.btn-scan {
+    transition: background-color 0.3s ease;
+}
+
+.btn-scan:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}

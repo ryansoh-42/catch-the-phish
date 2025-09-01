@@ -61,6 +61,26 @@ class PhishingDetector {
                 this.handleURLCheckResult(request.data);
             }
         });
+
+        // Add this message handler to content.js
+        chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+            if (request.action === 'extractAllLinks') {
+                try {
+                    console.log('CatchThePhish: Extracting all links from page');
+                    const links = Array.from(document.querySelectorAll('a[href]'))
+                        .map(a => a.href)
+                        .filter(href => href.startsWith('http'))
+                        .slice(0, 20); // Limit to 20 links
+                    
+                    console.log('CatchThePhish: Found links:', links);
+                    sendResponse(links);
+                } catch (error) {
+                    console.error('CatchThePhish: Error extracting links:', error);
+                    sendResponse([]);
+                }
+                return true; // Keep message channel open for async response
+            }
+        });
     }
 
     checkLink(linkElement) {
