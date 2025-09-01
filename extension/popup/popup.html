@@ -15,79 +15,59 @@
             </div>
             <div class="status" id="status">
                 <span class="status-indicator active" id="statusIndicator"></span>
-                <span id="statusText">Active</span>
+                <span id="statusText">Protecting You</span>
             </div>
         </div>
 
-        <!-- Stats Section -->
+        <!-- Current Website Analysis -->
+        <div class="analysis-section">
+            <h2>Current Website</h2>
+            <div class="page-status" id="pageStatus">
+                <span class="page-icon">🔍</span>
+                <span class="page-text">Loading...</span>
+            </div>
+            <button class="btn-scan" id="scanPage">Scan This Website</button>
+            <div class="threat-details" id="threatDetails" style="display: none;">
+                <div class="threat-list" id="threatList"></div>
+            </div>
+        </div>
+
+        <!-- Informative Stats -->
         <div class="stats-section">
-            <h2>Protection Stats</h2>
             <div class="stats-grid">
                 <div class="stat-item">
-                    <span class="stat-number" id="blockedCount">0</span>
-                    <span class="stat-label">Threats Blocked</span>
+                    <span class="stat-number" id="suspiciousFound">0</span>
+                    <span class="stat-label">Suspicious URLs Found</span>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-number" id="reportedCount">0</span>
-                    <span class="stat-label">URLs Reported</span>
+                    <span class="stat-number" id="websitesChecked">0</span>
+                    <span class="stat-label">Websites Checked</span>
                 </div>
             </div>
-        </div>
-
-        <!-- Current Page Analysis -->
-        <div class="analysis-section">
-            <h2>Current Page</h2>
-            <div class="page-status" id="pageStatus">
-                <span class="page-icon">✅</span>
-                <span class="page-text">This page appears safe</span>
-            </div>
-            <button class="btn-scan" id="scanPage">Scan This Page</button>
         </div>
 
         <!-- Quick Actions -->
         <div class="actions-section">
-            <div class="action-card">
-                <div>
-                    <div class="action-title">Report This Page</div>
-                    <div class="action-sub">Submit this URL to ScamShield for review</div>
-                </div>
-                <button class="btn-action" id="reportPage">
-                    Report This Page to ScamShield
-                </button>
-            </div>
-
-            <div class="action-card">
-                <div>
-                    <div class="action-title">View Reports</div>
-                    <div class="action-sub">See previously submitted reports</div>
-                </div>
-                <button class="btn-action" id="viewReports">
-                    View Reports
-                </button>
-            </div>
+            <button class="btn-action btn-report" id="reportPage">
+                <span class="btn-icon">🚨</span>
+                Report Suspicious Website
+            </button>
         </div>
 
-        <!-- Educational Tip -->
+        <!-- Daily Tip -->
         <div class="tip-section">
-            <h2>Security Tip</h2>
+            <h2>💡 Safety Tip</h2>
             <p id="dailyTip">Loading tip...</p>
         </div>
 
-        <!-- Settings -->
+        <!-- Simple Toggle -->
         <div class="settings-section">
             <div class="setting-item">
                 <label class="toggle">
                     <input type="checkbox" id="enableProtection" checked>
                     <span class="toggle-slider"></span>
                 </label>
-                <span class="setting-label">Enable Real-time Protection</span>
-            </div>
-            <div class="setting-item">
-                <label class="toggle">
-                    <input type="checkbox" id="enableTips" checked>
-                    <span class="toggle-slider"></span>
-                </label>
-                <span class="setting-label">Show Educational Tips</span>
+                <span class="setting-label">Enable Protection</span>
             </div>
         </div>
 
@@ -97,6 +77,7 @@
         </div>
     </div>
 
+    <script src="../utils/config.js"></script>
     <script src="popup.js"></script>
 </body>
 </html>

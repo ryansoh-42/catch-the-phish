@@ -6,6 +6,10 @@
     "author": "poopoopeepee",
     "homepage_url": "https://github.com/ryansoh-42/catch-the-phish",
 
+    "content_security_policy": {
+        "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline';"
+    },
+
     "permissions": [
         "activeTab",
         "storage",
@@ -28,6 +32,9 @@
                 "https://*/*"
             ],
             "js": [
+                "utils/config.js",
+                "utils/validators.js",
+                "utils/cache.js",
                 "content.js"
             ],
             "css": [
@@ -54,7 +61,8 @@
     "web_accessible_resources": [
         {
             "resources": [
-                "styles/*"
+                "styles/*",
+                "utils/*"
             ],
             "matches": [
                 "http://*/*",

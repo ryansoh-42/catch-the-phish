@@ -138,3 +138,64 @@
 .catchthephish-warning * {
     box-sizing: border-box !important;
 }
+
+/* Singapore-specific warning styles */
+.singapore-advice {
+    background: #fff3e0 !important;
+    padding: 10px !important;
+    border-radius: 4px !important;
+    margin: 10px 0 !important;
+    border-left: 4px solid #ff9800 !important;
+    font-size: 13px !important;
+}
+
+.singapore-advice strong {
+    color: #e65100 !important;
+}
+
+/* Critical threat styling */
+.warning-header .warning-title {
+    font-weight: 600 !important;
+    font-size: 16px !important;
+}
+
+/* Government/Banking threat - more prominent */
+.catchthephish-warning[data-threat="critical"] {
+    border: 3px solid #d32f2f !important;
+    box-shadow: 0 4px 20px rgba(211, 47, 47, 0.3) !important;
+}
+
+.catchthephish-warning[data-threat="critical"] .warning-header {
+    background: linear-gradient(135deg, #d32f2f 0%, #f44336 100%) !important;
+    animation: urgentPulse 2s infinite !important;
+}
+
+@keyframes urgentPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+}
+
+/* Confidence indicator */
+.confidence-indicator {
+    display: inline-block !important;
+    padding: 2px 6px !important;
+    border-radius: 10px !important;
+    font-size: 11px !important;
+    font-weight: bold !important;
+    margin-left: 5px !important;
+}
+
+.confidence-high {
+    background: #ffcdd2 !important;
+    color: #c62828 !important;
+}
+
+.confidence-medium {
+    background: #fff3e0 !important;
+    color: #ef6c00 !important;
+}
+
+.confidence-low {
+    background: #f3e5f5 !important;
+    color: #7b1fa2 !important;
+}
