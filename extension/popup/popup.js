@@ -32,18 +32,29 @@ async function initializePopup() {
 async function loadStats() {
     try {
         const response = await chrome.runtime.sendMessage({ action: 'getStats' });
-        if (response) {
+        if (response && !response.error) {
             document.getElementById('blockedCount').textContent = response.blocked || 0;
             document.getElementById('reportedCount').textContent = response.reported || 0;
+            
+            // Update additional stats if elements exist
+            const scannedElement = document.getElementById('scannedCount');
+            if (scannedElement) {
+                scannedElement.textContent = response.totalScanned || 0;
+            }
         }
     } catch (error) {
         console.error('CatchThePhish: Error loading stats:', error);
+        // Fallback to show zeros
+        document.getElementById('blockedCount').textContent = '0';
+        document.getElementById('reportedCount').textContent = '0';
     }
 }
 
 async function loadDailyTip() {
-    // Use tips from CONFIG instead of hardcoded array
-    const tips = CONFIG?.EDUCATIONAL_TIPS || [];
+    // Use Singapore-focused tips from CONFIG
+    const tips = CONFIG?.EDUCATIONAL_TIPS || [
+        "Stay safe online - verify before you trust!"
+    ];
     
     const today = new Date();
     const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
@@ -74,15 +85,30 @@ function updatePageStatus(analysis) {
     const pageText = statusElement.querySelector('.page-text');
     
     if (analysis?.isSuspicious) {
-        pageIcon.textContent = '⚠️';
-        pageText.textContent = `Warning: ${analysis.reason}`;
+        // Different icons for different threat types
+        if (analysis.detectionType?.includes('singapore_government')) {
+            pageIcon.textContent = '🚨';
+            pageText.textContent = `CRITICAL: ${analysis.reason}`;
+        } else if (analysis.detectionType?.includes('singapore_banking')) {
+            pageIcon.textContent = '🏦⚠️';
+            pageText.textContent = `BANKING THREAT: ${analysis.reason}`;
+        } else if (analysis.detectionType?.includes('singapore')) {
+            pageIcon.textContent = '🇸🇬⚠️';
+            pageText.textContent = `SG SCAM: ${analysis.reason}`;
+        } else {
+            pageIcon.textContent = '⚠️';
+            pageText.textContent = `Warning: ${analysis.reason}`;
+        }
+        
         statusElement.style.background = '#ffebee';
         pageText.style.color = '#c62828';
+        pageText.style.fontWeight = 'bold';
     } else {
         pageIcon.textContent = '✅';
         pageText.textContent = 'This page appears safe';
         statusElement.style.background = '#e8f5e8';
         pageText.style.color = '#2e7d32';
+        pageText.style.fontWeight = 'normal';
     }
 }
 

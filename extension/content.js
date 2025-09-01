@@ -24,7 +24,7 @@ class PhishingDetector {
                 
                 this.hoverTimeout = setTimeout(() => {
                     this.checkLink(event.target);
-                }, CONFIG?.DETECTION?.HOVER_DELAY || 500);
+                }, 500); // Fixed 500ms delay
             }
         });
 
@@ -137,7 +137,7 @@ class PhishingDetector {
 
         setTimeout(() => {
             this.hideWarning();
-        }, CONFIG?.DETECTION?.WARNING_AUTO_HIDE || 12000);
+        }, 12000); // Fixed 12 second auto-hide
     }
 
     createWarningElement(data) {
@@ -148,27 +148,7 @@ class PhishingDetector {
         const warningContent = document.createElement('div');
         warningContent.className = 'warning-content';
         
-        // Header
-        const header = this.createWarningHeader();
-        
-        // Body
-        const body = this.createWarningBody(data);
-        
-        // Actions
-        const actions = this.createWarningActions(data);
-        
-        warningContent.appendChild(header);
-        warningContent.appendChild(body);
-        warningContent.appendChild(actions);
-        warning.appendChild(warningContent);
-        
-        warning.setAttribute('role', 'alert');
-        warning.setAttribute('aria-live', 'assertive');
-        
-        return warning;
-    }
-
-    createWarningHeader() {
+        // Simple Header
         const header = document.createElement('div');
         header.className = 'warning-header';
         
@@ -178,7 +158,7 @@ class PhishingDetector {
         
         const title = document.createElement('span');
         title.className = 'warning-title';
-        title.textContent = 'Suspicious Link Detected';
+        title.textContent = 'Suspicious URL Detected'; // Simple, consistent title
         
         const closeBtn = document.createElement('button');
         closeBtn.className = 'warning-close';
@@ -190,47 +170,39 @@ class PhishingDetector {
         header.appendChild(title);
         header.appendChild(closeBtn);
         
-        return header;
-    }
-
-    createWarningBody(data) {
+        // Simple Body - Just the essentials
         const body = document.createElement('div');
         body.className = 'warning-body';
         
-        // Reason
+        // Main reason (simplified)
         const reasonP = document.createElement('p');
-        const reasonStrong = document.createElement('strong');
-        reasonStrong.textContent = 'Reason: ';
-        reasonP.appendChild(reasonStrong);
-        reasonP.appendChild(document.createTextNode(InputValidator.sanitizeText(data.reason)));
-        
-        // URL
-        const urlP = document.createElement('p');
-        const urlStrong = document.createElement('strong');
-        urlStrong.textContent = 'URL: ';
-        urlP.appendChild(urlStrong);
-        urlP.appendChild(document.createTextNode(InputValidator.sanitizeText(data.url)));
-        
+        reasonP.style.cssText = 'margin: 0 0 15px 0; font-size: 14px; color: #333;';
+        reasonP.textContent = InputValidator.sanitizeText(data.reason);
         body.appendChild(reasonP);
-        body.appendChild(urlP);
         
-        // Educational tip
+        // Educational tip (combined, Singapore-focused)
         if (data.tip) {
             const tipDiv = document.createElement('div');
             tipDiv.className = 'educational-tip';
+            tipDiv.style.cssText = 'background: #fff8e1; padding: 12px; border-radius: 4px; border-left: 4px solid #ffc107;';
+            
             const tipStrong = document.createElement('strong');
             tipStrong.textContent = '💡 Security Tip: ';
+            tipStrong.style.color = '#e65100';
             tipDiv.appendChild(tipStrong);
-            tipDiv.appendChild(document.createTextNode(InputValidator.sanitizeText(data.tip)));
+            
+            const tipText = document.createElement('span');
+            tipText.textContent = InputValidator.sanitizeText(data.tip);
+            tipText.style.color = '#bf360c';
+            tipDiv.appendChild(tipText);
+            
             body.appendChild(tipDiv);
         }
         
-        return body;
-    }
-
-    createWarningActions(data) {
+        // Simple Actions
         const actions = document.createElement('div');
         actions.className = 'warning-actions';
+        actions.style.cssText = 'padding: 15px 20px; border-top: 1px solid #eee; display: flex; gap: 10px;';
         
         const safeBtn = document.createElement('button');
         safeBtn.className = 'btn-safe';
@@ -239,7 +211,7 @@ class PhishingDetector {
         
         const reportBtn = document.createElement('button');
         reportBtn.className = 'btn-report';
-        reportBtn.textContent = 'Report This Site';
+        reportBtn.textContent = 'Report Scam';
         reportBtn.addEventListener('click', () => {
             try {
                 const sanitizedUrl = InputValidator.sanitizeURL(data.url);
@@ -256,7 +228,16 @@ class PhishingDetector {
         actions.appendChild(safeBtn);
         actions.appendChild(reportBtn);
         
-        return actions;
+        // Assemble
+        warningContent.appendChild(header);
+        warningContent.appendChild(body);
+        warningContent.appendChild(actions);
+        warning.appendChild(warningContent);
+        
+        warning.setAttribute('role', 'alert');
+        warning.setAttribute('aria-live', 'assertive');
+        
+        return warning;
     }
 
     hideWarning() {

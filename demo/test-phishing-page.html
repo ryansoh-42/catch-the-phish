@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CatchThePhish Demo - Test Page</title>
+    <title>CatchThePhish Singapore Demo - Test Page</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -23,9 +23,19 @@
 
         .demo-section h2 {
             color: #333;
-            border-bottom: 2px solid #667eea;
+            border-bottom: 2px solid #dc3545;
             padding-bottom: 10px;
             margin-bottom: 20px;
+        }
+
+        .singapore-section h2 {
+            border-bottom-color: #dc3545;
+            color: #dc3545;
+        }
+
+        .singapore-section {
+            border-left: 4px solid #dc3545;
+            background: #fff5f5;
         }
 
         .link-grid {
@@ -47,6 +57,11 @@
             color: #e74c3c;
         }
 
+        .singapore-section .link-item h4 {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
         .link-item p {
             margin: 5px 0;
             font-size: 14px;
@@ -64,8 +79,16 @@
             transition: background 0.2s;
         }
 
+        .singapore-section .link-item a {
+            background: #dc3545;
+        }
+
         .link-item a:hover {
             background: #c0392b;
+        }
+
+        .singapore-section .link-item a:hover {
+            background: #bb2d3b;
         }
 
         .safe-section {
@@ -103,6 +126,16 @@
             margin-bottom: 20px;
         }
 
+        .singapore-banner {
+            background: #ffe6e6;
+            border: 1px solid #ffcccc;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #dc3545;
+        }
+
         .test-instructions {
             background: #e3f2fd;
             border: 1px solid #90caf9;
@@ -131,52 +164,196 @@
             border: 1px solid #ddd;
             border-radius: 4px;
         }
+
+        .priority-high {
+            border-left: 4px solid #dc3545;
+            background: #fff5f5;
+        }
+
+        .flag {
+            font-size: 1.2em;
+            margin-right: 5px;
+        }
     </style>
 </head>
 <body>
-    <div class="warning-banner">
-        <strong>⚠️ Demo Test Page</strong> - This page contains intentionally suspicious links for testing the CatchThePhish extension. Do not visit these links without protection!
+    <div class="singapore-banner">
+        <strong>🇸🇬 CatchThePhish Singapore Demo</strong> - This page tests Singapore-specific phishing threats. These are real attack patterns targeting Singaporeans!
     </div>
 
     <div class="test-instructions">
-        <strong>🧪 How to Test Your Extension:</strong>
+        <strong>🧪 How to Test Your Singapore-Focused Extension:</strong>
         <ol>
             <li>Make sure your CatchThePhish extension is loaded and active</li>
             <li>Open Chrome DevTools Console (F12) to see detection logs</li>
             <li>Hover over the suspicious links below (wait 500ms for detection)</li>
-            <li>Look for warning popups and console messages</li>
-            <li>Try copying and pasting the URLs in the test section</li>
+            <li>🇸🇬 Singapore threats should show CRITICAL warnings with higher confidence</li>
+            <li>Look for Singapore-specific advice in warning popups</li>
         </ol>
     </div>
 
-    <!-- Typosquatting Tests -->
+    <!-- Singapore Government Spoofing Tests -->
+    <div class="demo-section singapore-section priority-high">
+        <h2><span class="flag">🚨</span>Singapore Government Spoofing (CRITICAL THREATS)</h2>
+        <p><strong>These should trigger the highest security alerts with 92%+ confidence:</strong></p>
+        
+        <div class="link-grid">
+            <div class="link-item">
+                <h4>🏛️ Fake SingPass</h4>
+                <p>Should trigger: CRITICAL government impersonation</p>
+                <a href="http://singpass-gov.sg" target="_blank">singpass-gov.sg</a>
+            </div>
+            
+            <div class="link-item">
+                <h4>🏛️ Fake CPF</h4>
+                <p>Should trigger: CRITICAL government impersonation</p>
+                <a href="http://cpf-gov.sg" target="_blank">cpf-gov.sg</a>
+            </div>
+            
+            <div class="link-item">
+                <h4>🏛️ Fake IRAS</h4>
+                <p>Should trigger: CRITICAL government impersonation</p>
+                <a href="http://iras.gov-sg.com" target="_blank">iras.gov-sg.com</a>
+            </div>
+            
+            <div class="link-item">
+                <h4>🏛️ Fake HDB</h4>
+                <p>Should trigger: CRITICAL government impersonation</p>
+                <a href="http://hdb.gov.sg.verify.com" target="_blank">hdb.gov.sg.verify.com</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Singapore Banking Spoofing Tests -->
+    <div class="demo-section singapore-section">
+        <h2><span class="flag">🏦</span>Singapore Banking Spoofing (HIGH THREATS)</h2>
+        <p><strong>These should trigger banking impersonation alerts with 88%+ confidence:</strong></p>
+        
+        <div class="link-grid">
+            <div class="link-item">
+                <h4>🏦 Fake DBS</h4>
+                <p>Should trigger: CRITICAL banking impersonation</p>
+                <a href="http://dbs-com.sg" target="_blank">dbs-com.sg</a>
+            </div>
+            
+            <div class="link-item">
+                <h4>🏦 Fake OCBC</h4>
+                <p>Should trigger: CRITICAL banking impersonation</p>
+                <a href="http://ocbc.com-sg.net" target="_blank">ocbc.com-sg.net</a>
+            </div>
+            
+            <div class="link-item">
+                <h4>🏦 Fake UOB</h4>
+                <p>Should trigger: CRITICAL banking impersonation</p>
+                <a href="http://uob-singapore.com" target="_blank">uob-singapore.com</a>
+            </div>
+            
+            <div class="link-item">
+                <h4>🏦 Fake POSB</h4>
+                <p>Should trigger: CRITICAL banking impersonation</p>
+                <a href="http://posb-bank.sg" target="_blank">posb-bank.sg</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Singapore Local Services Spoofing -->
+    <div class="demo-section singapore-section">
+        <h2><span class="flag">🛒</span>Singapore Local Services Spoofing</h2>
+        <p><strong>Popular Singapore services that scammers often impersonate:</strong></p>
+        
+        <div class="link-grid">
+            <div class="link-item">
+                <h4>🛒 Fake Shopee</h4>
+                <p>Should trigger: Singapore local service spoofing</p>
+                <a href="http://shopee-sg.com" target="_blank">shopee-sg.com</a>
+            </div>
+            
+            <div class="link-item">
+                <h4>🚗 Fake Grab</h4>
+                <p>Should trigger: Singapore local service spoofing</p>
+                <a href="http://grab-singapore.com" target="_blank">grab-singapore.com</a>
+            </div>
+            
+            <div class="link-item">
+                <h4>🛒 Fake Lazada</h4>
+                <p>Should trigger: Singapore local service spoofing</p>
+                <a href="http://lazada.sg.promo.com" target="_blank">lazada.sg.promo.com</a>
+            </div>
+            
+            <div class="link-item">
+                <h4>🍔 Fake FoodPanda</h4>
+                <p>Should trigger: Singapore local service spoofing</p>
+                <a href="http://foodpanda-sg.net" target="_blank">foodpanda-sg.net</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Singapore Scam Patterns -->
+    <div class="demo-section singapore-section">
+        <h2><span class="flag">🎯</span>Singapore-Specific Scam Patterns</h2>
+        <p><strong>URLs containing Singapore-targeted scam keywords:</strong></p>
+        
+        <div class="link-grid">
+            <div class="link-item">
+                <h4>🆔 SingPass Verification Scam</h4>
+                <p>Should trigger: Singapore scam pattern detection</p>
+                <a href="http://example.com/singpass-verify-account" target="_blank">singpass-verify-account</a>
+            </div>
+            
+            <div class="link-item">
+                <h4>💰 CPF Bonus Scam</h4>
+                <p>Should trigger: Singapore scam pattern detection</p>
+                <a href="http://example.com/cpf-bonus-claim" target="_blank">cpf-bonus-claim</a>
+            </div>
+            
+            <div class="link-item">
+                <h4>💳 DBS Security Update Scam</h4>
+                <p>Should trigger: Singapore banking scam pattern</p>
+                <a href="http://example.com/dbs-security-update" target="_blank">dbs-security-update</a>
+            </div>
+            
+            <div class="link-item">
+                <h4>🎓 SkillsFuture Credit Scam</h4>
+                <p>Should trigger: Singapore scam pattern detection</p>
+                <a href="http://example.com/skillsfuture-credit-expire" target="_blank">skillsfuture-credit-expire</a>
+            </div>
+            
+            <div class="link-item">
+                <h4>🎟️ CDC Voucher Scam</h4>
+                <p>Should trigger: Singapore scam pattern detection</p>
+                <a href="http://example.com/cdc-voucher-claim" target="_blank">cdc-voucher-claim</a>
+            </div>
+            
+            <div class="link-item">
+                <h4>🏆 Singapore Lottery Scam</h4>
+                <p>Should trigger: Singapore scam pattern detection</p>
+                <a href="http://example.com/singapore-lottery-winner" target="_blank">singapore-lottery-winner</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Threats (Lower Priority) -->
     <div class="demo-section">
-        <h2>🎭 Typosquatting Detection Tests</h2>
-        <p>These links mimic popular websites with slight spelling variations:</p>
+        <h2>🌍 Global Typosquatting Tests</h2>
+        <p>These should trigger with lower confidence (75-78%) compared to Singapore threats:</p>
         
         <div class="link-grid">
             <div class="link-item">
                 <h4>Fake Google</h4>
-                <p>Should trigger: Domain impersonation detection</p>
+                <p>Should trigger: Global typosquatting detection</p>
                 <a href="http://g00gle.com" target="_blank">g00gle.com</a>
             </div>
             
             <div class="link-item">
                 <h4>Fake PayPal</h4>
-                <p>Should trigger: Typosquatting detection</p>
+                <p>Should trigger: Global typosquatting detection</p>
                 <a href="http://paypaI.com" target="_blank">paypaI.com (with capital i)</a>
             </div>
             
             <div class="link-item">
                 <h4>Fake Amazon</h4>
-                <p>Should trigger: Domain similarity detection</p>
+                <p>Should trigger: Global typosquatting detection</p>
                 <a href="http://amazom.com" target="_blank">amazom.com</a>
-            </div>
-            
-            <div class="link-item">
-                <h4>Fake Microsoft</h4>
-                <p>Should trigger: Character substitution detection</p>
-                <a href="http://microsft.com" target="_blank">microsft.com</a>
             </div>
         </div>
     </div>
@@ -184,7 +361,7 @@
     <!-- IP Address Tests -->
     <div class="demo-section">
         <h2>🌐 IP Address Detection Tests</h2>
-        <p>Legitimate websites use domain names, not IP addresses:</p>
+        <p>These should trigger high confidence warnings (95%) regardless of location:</p>
         
         <div class="link-grid">
             <div class="link-item">
@@ -201,187 +378,164 @@
         </div>
     </div>
 
-    <!-- Suspicious Pattern Tests -->
-    <div class="demo-section">
-        <h2>🚨 Suspicious Pattern Detection Tests</h2>
-        <p>URLs containing common phishing keywords and patterns:</p>
+    <!-- Advanced Singapore Test Cases -->
+    <div class="demo-section singapore-section">
+        <h2><span class="flag">🔬</span>Advanced Singapore Test Cases</h2>
+        <p>Sophisticated Singapore-targeted attacks:</p>
         
         <div class="link-grid">
             <div class="link-item">
-                <h4>Urgent Account Update</h4>
-                <p>Should trigger: Suspicious pattern detection</p>
-                <a href="http://secure-account-update.com/urgent" target="_blank">secure-account-update.com/urgent</a>
+                <h4>🏛️ Government Subdomain Spoofing</h4>
+                <p>Should trigger: Government impersonation</p>
+                <a href="http://secure.singpass.fake-gov.sg" target="_blank">secure.singpass.fake-gov.sg</a>
             </div>
             
             <div class="link-item">
-                <h4>Verify Account Now</h4>
-                <p>Should trigger: Phishing pattern detection</p>
-                <a href="http://verify-account-now.net/click-here-now" target="_blank">verify-account-now.net/click-here-now</a>
+                <h4>🏦 Banking Security Alert</h4>
+                <p>Should trigger: Banking + suspicious patterns</p>
+                <a href="http://dbs-security-alert.tk/urgent-action" target="_blank">dbs-security-alert.tk</a>
             </div>
             
             <div class="link-item">
-                <h4>Suspended Account</h4>
-                <p>Should trigger: Suspicious pattern detection</p>
-                <a href="http://account-suspended.org/limited-time" target="_blank">account-suspended.org/limited-time</a>
-            </div>
-            
-            <div class="link-item">
-                <h4>Security Alert</h4>
-                <p>Should trigger: Multiple suspicious patterns</p>
-                <a href="http://security-alert.info/urgent-action-required" target="_blank">security-alert.info/urgent-action-required</a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Character Encoding Tests -->
-    <div class="demo-section">
-        <h2>🔤 Suspicious Character Detection Tests</h2>
-        <p>URLs using unusual characters or encoding tricks:</p>
-        
-        <div class="link-grid">
-            <div class="link-item">
-                <h4>Punycode Domain</h4>
-                <p>Should trigger: Unusual character encoding</p>
-                <a href="http://xn--e1afmkfd.xn--p1ai" target="_blank">xn--e1afmkfd.xn--p1ai</a>
-            </div>
-            
-            <div class="link-item">
-                <h4>Multiple Hyphens</h4>
-                <p>Should trigger: Suspicious character pattern</p>
-                <a href="http://pay--pal--secure.com" target="_blank">pay--pal--secure.com</a>
-            </div>
-            
-            <div class="link-item">
-                <h4>Number Sequences</h4>
-                <p>Should trigger: Suspicious number pattern</p>
-                <a href="http://bank12345.com" target="_blank">bank12345.com</a>
+                <h4>🎯 Multi-Pattern Singapore Scam</h4>
+                <p>Should trigger: Multiple Singapore indicators</p>
+                <a href="http://singapore-prize-winner-merdeka-generation-bonus.com/claim-now" target="_blank">Complex Singapore Scam URL</a>
             </div>
         </div>
     </div>
 
     <!-- Copy/Paste Test Section -->
     <div class="copy-test">
-        <h3>📋 Copy/Paste Detection Test</h3>
-        <p>Test the copy and paste detection features:</p>
+        <h3>📋 Singapore Copy/Paste Detection Test</h3>
+        <p>Test the copy and paste detection with Singapore-specific threats:</p>
         
         <div style="margin: 15px 0;">
-            <strong>Copy this suspicious URL:</strong>
-            <input type="text" value="http://paypaI-security-update.com/verify-account-now" readonly 
+            <strong>Copy this Singapore government scam URL:</strong>
+            <input type="text" value="http://singpass-gov.sg/verify-account-suspended" readonly 
+                   onclick="this.select()" style="margin-left: 10px; width: 400px;">
+        </div>
+        
+        <div style="margin: 15px 0;">
+            <strong>Copy this Singapore banking scam URL:</strong>
+            <input type="text" value="http://dbs-com.sg/security-update-required" readonly 
                    onclick="this.select()" style="margin-left: 10px; width: 400px;">
         </div>
         
         <div style="margin: 15px 0;">
             <strong>Paste suspicious URLs here:</strong>
-            <input type="text" placeholder="Paste a URL here to test detection..." style="width: 400px;">
+            <input type="text" placeholder="Paste a URL here to test Singapore-focused detection..." style="width: 400px;">
         </div>
     </div>
 
-    <!-- Safe Links Section (Control Group) -->
+    <!-- Safe Links Section (Singapore Context) -->
     <div class="demo-section safe-section">
-        <h2>✅ Safe Links (Should NOT Trigger Warnings)</h2>
-        <p>These legitimate links should pass all security checks:</p>
+        <h2>✅ Legitimate Singapore Sites (Should NOT Trigger Warnings)</h2>
+        <p>These legitimate Singapore websites should pass all security checks:</p>
         
         <div class="link-grid">
             <div class="link-item">
-                <h4>Google (Legitimate)</h4>
+                <h4>🏛️ Real SingPass</h4>
                 <p>Should be safe - no warnings expected</p>
-                <a href="https://www.google.com" target="_blank">google.com</a>
+                <a href="https://www.singpass.gov.sg" target="_blank">singpass.gov.sg</a>
             </div>
             
             <div class="link-item">
-                <h4>GitHub (Legitimate)</h4>
+                <h4>🏦 Real DBS</h4>
                 <p>Should be safe - no warnings expected</p>
-                <a href="https://github.com" target="_blank">github.com</a>
+                <a href="https://www.dbs.com.sg" target="_blank">dbs.com.sg</a>
             </div>
             
             <div class="link-item">
-                <h4>Stack Overflow (Legitimate)</h4>
+                <h4>🛒 Real Shopee</h4>
                 <p>Should be safe - no warnings expected</p>
-                <a href="https://stackoverflow.com" target="_blank">stackoverflow.com</a>
+                <a href="https://shopee.sg" target="_blank">shopee.sg</a>
+            </div>
+            
+            <div class="link-item">
+                <h4>🏛️ Real CPF</h4>
+                <p>Should be safe - no warnings expected</p>
+                <a href="https://www.cpf.gov.sg" target="_blank">cpf.gov.sg</a>
             </div>
         </div>
     </div>
 
     <!-- Test Results Section -->
     <div class="demo-section">
-        <h2>📊 Test Results</h2>
-        <p>Use this section to track your testing results:</p>
+        <h2>📊 Expected Test Results</h2>
+        <p>Track your testing results and expected confidence levels:</p>
         
         <div id="testResults">
-            <h4>Expected Detections:</h4>
+            <h4>🇸🇬 Singapore Threats (Should trigger HIGH confidence):</h4>
             <ul>
-                <li>✅ g00gle.com - Typosquatting</li>
-                <li>✅ paypaI.com - Character substitution</li>
-                <li>✅ amazom.com - Typosquatting</li>
-                <li>✅ IP addresses - Should all trigger warnings</li>
-                <li>✅ "secure-account-update" - Suspicious patterns</li>
-                <li>✅ "verify-account-now" - Phishing patterns</li>
-                <li>✅ Punycode domains - Character encoding</li>
+                <li>🚨 Government spoofing: 92%+ confidence, CRITICAL alerts</li>
+                <li>🏦 Banking spoofing: 88%+ confidence, CRITICAL alerts</li>
+                <li>🛒 Local services: 82%+ confidence, HIGH alerts</li>
+                <li>🎯 Singapore scam patterns: 85%+ confidence</li>
             </ul>
             
-            <h4>Should NOT Trigger:</h4>
+            <h4>🌍 Global Threats (Should trigger MEDIUM confidence):</h4>
             <ul>
-                <li>❌ google.com - Legitimate domain</li>
-                <li>❌ github.com - Legitimate domain</li>
-                <li>❌ stackoverflow.com - Legitimate domain</li>
+                <li>🌐 Global typosquatting: 75-78% confidence</li>
+                <li>📊 IP addresses: 95% confidence (universal threat)</li>
+                <li>🔤 Suspicious characters: 70% confidence</li>
             </ul>
-        </div>
-    </div>
-
-    <!-- Advanced Test Cases -->
-    <div class="demo-section">
-        <h2>🔬 Advanced Test Cases</h2>
-        <p>More sophisticated phishing attempts:</p>
-        
-        <div class="link-grid">
-            <div class="link-item">
-                <h4>Subdomain Spoofing</h4>
-                <p>Should trigger: Suspicious subdomain</p>
-                <a href="http://secure.paypal.phishing-site.com" target="_blank">secure.paypal.phishing-site.com</a>
-            </div>
             
-            <div class="link-item">
-                <h4>Long Suspicious URL</h4>
-                <p>Should trigger: Excessive length + patterns</p>
-                <a href="http://urgent-security-update-required-for-your-account-verification-click-here-now.com/verify?urgent=true&action=required&time=limited" target="_blank">Very Long Suspicious URL</a>
-            </div>
-            
-            <div class="link-item">
-                <h4>Banking Impersonation</h4>
-                <p>Should trigger: Multiple suspicious indicators</p>
-                <a href="http://banking-security-alert.tk/urgent-action" target="_blank">banking-security-alert.tk</a>
-            </div>
+            <h4>✅ Should NOT Trigger:</h4>
+            <ul>
+                <li>❌ Real .gov.sg sites - Legitimate domains</li>
+                <li>❌ Real Singapore banks - Legitimate domains</li>
+                <li>❌ Real Singapore services - Legitimate domains</li>
+            </ul>
         </div>
     </div>
 
     <script>
-        // Add some interactivity for testing
+        // Enhanced demo functionality for Singapore context
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('Demo page loaded - ready for CatchThePhish testing');
+            console.log('🇸🇬 Singapore CatchThePhish Demo loaded - ready for testing!');
             
             // Add click handlers to prevent actual navigation during demo
             const suspiciousLinks = document.querySelectorAll('.demo-section:not(.safe-section) a');
             suspiciousLinks.forEach(link => {
                 link.addEventListener('click', (e) => {
                     e.preventDefault();
-                    alert(`Demo: Prevented navigation to ${link.href}\n\nIn a real scenario, this could be a malicious site!`);
+                    
+                    let alertMessage = `🚨 Demo: Prevented navigation to ${link.href}\n\n`;
+                    
+                    // Add context based on threat type
+                    if (link.href.includes('singpass') || link.href.includes('cpf') || link.href.includes('iras')) {
+                        alertMessage += '🏛️ This appears to be a GOVERNMENT IMPERSONATION attempt!\nIn Singapore, this is a serious crime. Always verify .gov.sg sites directly.';
+                    } else if (link.href.includes('dbs') || link.href.includes('ocbc') || link.href.includes('uob') || link.href.includes('posb')) {
+                        alertMessage += '🏦 This appears to be a BANKING IMPERSONATION attempt!\nSingapore banks will NEVER ask you to verify via email links.';
+                    } else if (link.href.includes('shopee') || link.href.includes('grab') || link.href.includes('lazada')) {
+                        alertMessage += '🛒 This appears to be a LOCAL SERVICE IMPERSONATION!\nAlways use official apps or websites for Singapore services.';
+                    } else {
+                        alertMessage += '⚠️ In a real scenario, this could be a malicious site targeting Singaporeans!';
+                    }
+                    
+                    alert(alertMessage);
                 });
             });
             
-            // Track hover events for demo purposes
+            // Enhanced hover tracking with Singapore context
             let hoverCount = 0;
             document.addEventListener('mouseover', (e) => {
                 if (e.target.tagName === 'A') {
                     hoverCount++;
-                    console.log(`Demo: Link hover #${hoverCount} - ${e.target.href}`);
+                    const isSingaporeTarget = e.target.href.includes('singpass') || 
+                                           e.target.href.includes('dbs') || 
+                                           e.target.href.includes('shopee') ||
+                                           e.target.href.includes('cpf');
+                    
+                    console.log(`🎯 Demo: Hover #${hoverCount} - ${e.target.href} ${isSingaporeTarget ? '🇸🇬 (Singapore Target)' : '🌍 (Global Target)'}`);
                 }
             });
         });
 
-        // Test copy functionality
+        // Enhanced copy functionality with Singapore context
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text).then(() => {
-                console.log('Demo: Copied to clipboard:', text);
+                console.log('📋 Demo: Copied Singapore threat URL to clipboard:', text);
             });
         }
     </script>
