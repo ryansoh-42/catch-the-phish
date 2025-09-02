@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from config import logger, HOST, PORT
-from routers import url_analysis_router
+from routers import url_analysis_router, text_analysis_router
 from models import HealthResponse
 from datetime import datetime
 import uvicorn
@@ -47,6 +47,7 @@ async def health_check():
     )
 
 app.include_router(url_analysis_router)
+app.include_router(text_analysis_router)
 
 def run_app():
     config = uvicorn.Config(

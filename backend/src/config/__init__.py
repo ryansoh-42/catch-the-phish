@@ -2,12 +2,14 @@ from .config import (
     logger,
     HOST,
     PORT,
-    VIRUS_TOTAL_API_KEY
+    VIRUS_TOTAL_API_KEY,
+    HUGGINGFACE_API_KEY
 )
 
 __all__ = [
     "logger",
     "HOST",
     "PORT",
-    "VIRUS_TOTAL_API_KEY"
+    "VIRUS_TOTAL_API_KEY",
+    "HUGGINGFACE_API_KEY"
 ]
