@@ -1,24 +1,24 @@
 # Core FastAPI and ASGI server
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-pydantic==2.5.0
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+pydantic>=2.10.0
 
 # Environment configuration
-python-dotenv==1.0.0
+python-dotenv>=1.0.0
 
 # HTTP clients for external API calls
-aiohttp==3.9.1
-requests==2.31.0
+aiohttp>=3.10.0
+requests>=2.32.0
 
 # Domain and security analysis
-python-whois==0.8.0
-pyopenssl==23.3.0
-dnspython==2.4.2
+python-whois>=0.8.0
+pyopenssl>=24.0.0
+dnspython>=2.6.0
 
 # Security and SSL handling
-cryptography>=41.0.5,<42
-urllib3==2.1.0
-certifi==2023.11.17
+cryptography>=43.0.0
+urllib3>=2.2.0
+certifi>=2024.0.0
 
 # Virus total python client
-vt-py==0.18.2
+vt-py>=0.19.0
