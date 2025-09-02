@@ -43,3 +43,24 @@ class ErrorResponse(BaseModel):
     error: str = Field(..., description="Error type")
     message: str = Field(..., description="Error message")
     timestamp: str = Field(..., description="Error timestamp")
+
+# Text Analysis Models
+class TextAnalysisRequest(BaseModel):
+    text: str = Field(..., min_length=10, max_length=5000)
+    context: Optional[str] = Field(None, description="Context of the text")
+
+class TextChunkRequest(BaseModel):
+    chunks: List[Dict[str, str]] = Field(..., description="Text chunks to analyze")
+
+class TextAnalysisResponse(BaseModel):
+    is_suspicious: bool
+    confidence: float = Field(ge=0.0, le=1.0)
+    risk_level: str  # safe, suspicious, dangerous
+    reasons: List[str]
+    source: str  # huggingface or local_fallback
+
+class PageTextAnalysisResponse(BaseModel):
+    overall_risk: str
+    suspicious_chunks: List[Dict]
+    total_chunks_analyzed: int
+    summary: str

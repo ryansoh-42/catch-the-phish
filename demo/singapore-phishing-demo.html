@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SingPass Security Update - Government of Singapore</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🇸🇬</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            color: #333;
+        }
+
+        /* Header mimicking Singapore government sites */
+        .header {
+            background: #d32f2f;
+            color: white;
+            padding: 1rem 0;
+            border-bottom: 3px solid #b71c1c;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .gov-logo {
+            font-size: 2rem;
+        }
+
+        .site-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .urgent-banner {
+            background: linear-gradient(45deg, #ff5722, #ff7043);
+            color: white;
+            text-align: center;
+            padding: 0.8rem;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .alert-box {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-left: 5px solid #f39c12;
+        }
+
+        .alert-title {
+            color: #856404;
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .content-section {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            margin: 2rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin: 1.5rem 0;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #d32f2f;
+        }
+
+        .btn {
+            background: #d32f2f;
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+            width: 100%;
+            margin: 1rem 0;
+        }
+
+        .btn:hover {
+            background: #b71c1c;
+        }
+
+        .urgency-text {
+            color: #d32f2f;
+            font-weight: bold;
+        }
+
+        .phishing-links {
+            margin: 2rem 0;
+        }
+
+        .phishing-links a {
+            color: #d32f2f;
+            text-decoration: none;
+            margin: 0 1rem;
+            font-weight: bold;
+        }
+
+        .phishing-links a:hover {
+            text-decoration: underline;
+        }
+
+        .footer {
+            background: #333;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+        }
+
+        .timer {
+            background: #ff4444;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+
+        .suspicious-text {
+            background: #ffe6e6;
+            border: 1px solid #ffcccc;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+
+        .highlight {
+            background: yellow;
+            padding: 2px 4px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header mimicking Singapore government style -->
+    <header class="header">
+        <div class="header-content">
+            <div class="gov-logo">🇸🇬</div>
+            <div class="site-title">Government of Singapore - Digital Identity Services</div>
+        </div>
+    </header>
+
+    <!-- Urgent banner - typical phishing tactic -->
+    <div class="urgent-banner">
+        🚨 URGENT: Your SingPass account requires immediate security verification to prevent suspension!
+    </div>
+
+    <div class="container">
+        <!-- Alert box with phishing language -->
+        <div class="alert-box">
+            <div class="alert-title">
+                ⚠️ Security Alert: Action Required Within 24 Hours
+            </div>
+            <p>We have detected <span class="urgency-text">suspicious activities</span> on your SingPass Digital Identity account. Your account will be <span class="urgency-text">permanently suspended</span> if you do not verify your identity immediately.</p>
+        </div>
+
+        <!-- Timer to create urgency - classic phishing tactic -->
+        <div class="timer" id="countdown">
+            ⏰ Time remaining to verify: 23:45:12
+        </div>
+
+        <!-- Main content with phishing elements -->
+        <div class="content-section">
+            <h2>🔐 SingPass Identity Verification Required</h2>
+            <p>Dear Valued Citizen,</p>
+            
+            <div class="suspicious-text">
+                <p>Due to new <span class="highlight">cybersecurity regulations</span> implemented by the Monetary Authority of Singapore (MAS) and the Cyber Security Agency of Singapore (CSA), all SingPass accounts must undergo immediate re-verification.</p>
+                
+                <p>Failure to complete this process within <span class="urgency-text">24 hours</span> will result in:</p>
+                <ul style="margin: 1rem 0; padding-left: 2rem;">
+                    <li>Permanent account suspension</li>
+                    <li>Loss of access to government services</li>
+                    <li>Inability to file tax returns</li>
+                    <li>Blocking of CPF and banking services</li>
+                </ul>
+            </div>
+
+            <p><strong>This verification is mandatory under the new Digital Identity Security Act 2024.</strong></p>
+
+            <!-- Phishing form -->
+            <form id="phishingForm" onsubmit="return false;">
+                <div class="form-group">
+                    <label for="nric">NRIC/FIN Number:</label>
+                    <input type="text" id="nric" name="nric" placeholder="Enter your NRIC (e.g., S1234567A)" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="singpass-id">SingPass User ID:</label>
+                    <input type="text" id="singpass-id" name="singpass-id" placeholder="Your SingPass login ID" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">SingPass Password:</label>
+                    <input type="password" id="password" name="password" placeholder="Enter your current password" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Mobile Number (for SMS verification):</label>
+                    <input type="tel" id="phone" name="phone" placeholder="+65 XXXX XXXX" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="bank-account">Primary Bank Account Number:</label>
+                    <input type="text" id="bank-account" name="bank-account" placeholder="For identity cross-verification" required>
+                </div>
+
+                <button type="submit" class="btn" onclick="showPhishingAlert()">
+                    🔒 Verify Identity & Secure Account
+                </button>
+            </form>
+        </div>
+
+        <!-- Suspicious links section -->
+        <div class="content-section">
+            <h3>📋 Additional Verification Steps</h3>
+            <p>After completing the above form, you may also need to:</p>
+            
+            <div class="phishing-links">
+                <a href="https://singpass-verify-gov-sg.suspicious-domain.com/verify" target="_blank">
+                    Complete Advanced Identity Check
+                </a>
+                <a href="https://gov-sg-banking-verify.fake-site.net/secure" target="_blank">
+                    Bank Account Cross-Verification
+                </a>
+                <a href="https://cpf-gov-singapore-verify.scam-domain.org/update" target="_blank">
+                    Update CPF Security Settings
+                </a>
+            </div>
+
+            <div class="suspicious-text">
+                <p><strong>⚡ Quick Verification Links:</strong></p>
+                <p>Click here to instantly verify your identity: <a href="https://gov-sg-verify-now.fake-domain.com/instant" onclick="showSuspiciousPopup(); return false;">gov.sg/verify-now</a></p>
+                <p>Download our new security app: <a href="https://singpass-secure-app.suspicious-site.net/download/SingPass-Secure-2024.apk" onclick="showSuspiciousPopup(); return false;">SingPass-Secure-2024.apk</a></p>
+            </div>
+        </div>
+
+        <!-- Social engineering section -->
+        <div class="content-section">
+            <h3>🎯 Why This Verification is Critical</h3>
+            <p>Recent cyber attacks have targeted Singapore citizens through:</p>
+            <ul style="margin: 1rem 0; padding-left: 2rem;">
+                <li><span class="highlight">Fake government websites</span> - Always verify you're on the official site</li>
+                <li><span class="highlight">Phishing emails</span> - Government agencies never ask for passwords via email</li>
+                <li><span class="highlight">SMS scams</span> - Be wary of urgent messages requesting personal information</li>
+                <li><span class="highlight">Social media fraud</span> - Scammers impersonate government officials</li>
+            </ul>
+            
+            <p class="urgency-text">This is why immediate re-verification is essential to protect your digital identity!</p>
+        </div>
+
+        <!-- Fake testimonials -->
+        <div class="content-section">
+            <h3>✅ Citizen Testimonials</h3>
+            <blockquote style="border-left: 4px solid #d32f2f; padding-left: 1rem; margin: 1rem 0; font-style: italic;">
+                "I completed my verification in just 5 minutes. My account is now more secure than ever!" - <strong>Sarah T., Tampines</strong>
+            </blockquote>
+            <blockquote style="border-left: 4px solid #d32f2f; padding-left: 1rem; margin: 1rem 0; font-style: italic;">
+                "Thank goodness I verified in time. My colleague's account got suspended because he didn't act quickly enough." - <strong>Ahmad R., Jurong</strong>
+            </blockquote>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>© 2024 Government of Singapore. All rights reserved.</p>
+        <p style="font-size: 0.9rem; margin-top: 0.5rem; opacity: 0.8;">
+            🚨 DEMO SITE FOR TESTING PURPOSES ONLY - NOT A REAL GOVERNMENT WEBSITE 🚨
+        </p>
+    </footer>
+
+    <script>
+        // Countdown timer to create urgency
+        function updateCountdown() {
+            const timer = document.getElementById('countdown');
+            let timeLeft = 86392; // 23:59:52 in seconds
+            
+            setInterval(() => {
+                const hours = Math.floor(timeLeft / 3600);
+                const minutes = Math.floor((timeLeft % 3600) / 60);
+                const seconds = timeLeft % 60;
+                
+                timer.textContent = `⏰ Time remaining to verify: ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                timeLeft--;
+                if (timeLeft < 0) timeLeft = 86400; // Reset to 24 hours
+            }, 1000);
+        }
+
+        function showPhishingAlert() {
+            alert('🚨 DEMO ALERT: This would be where a real phishing site would steal your information!\n\nNEVER enter your real SingPass credentials on suspicious websites!\n\nYour extension should have detected this as a phishing attempt.');
+        }
+
+        function showSuspiciousPopup() {
+            alert('🚨 SUSPICIOUS LINK DETECTED!\n\nThis link would typically:\n- Download malware\n- Redirect to fake login pages\n- Steal your personal information\n\nYour extension should warn you about these links!');
+        }
+
+        // Simulate some dynamic phishing behavior
+        function addDynamicThreats() {
+            // Add fake urgent notifications
+            setTimeout(() => {
+                const banner = document.querySelector('.urgent-banner');
+                banner.innerHTML = '🚨 CRITICAL: 3 failed login attempts detected! Verify now to prevent permanent lockout!';
+            }, 10000);
+
+            // Add fake security warnings
+            setTimeout(() => {
+                const container = document.querySelector('.container');
+                const footer = document.querySelector('.footer');
+                if (container && footer) {
+                    const suspiciousDiv = document.createElement('div');
+                    suspiciousDiv.className = 'suspicious-text';
+                    suspiciousDiv.style.margin = '2rem 0';
+                    suspiciousDiv.innerHTML = '<p><strong>🔥 BREAKING:</strong> New data breach affects 50,000 SingPass accounts. Verify your account security immediately to check if you\'re affected!</p>';
+                    container.insertBefore(suspiciousDiv, footer);
+                }
+            }, 15000);
+        }
+
+        // Initialize the demo
+        updateCountdown();
+        addDynamicThreats();
+
+        // Prevent actual form submission
+        document.getElementById('phishingForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            showPhishingAlert();
+        });
+    </script>
+</body>
+</html>

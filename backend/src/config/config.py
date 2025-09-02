@@ -90,3 +90,8 @@ VIRUS_TOTAL_API_KEY = os.getenv("VIRUS_TOTAL_API_KEY")
 if not VIRUS_TOTAL_API_KEY:
     logger.error("Failure to load Virus Total API key from .env file")
     raise ValueError("Failure to load Virus Total API key from .env file")
+
+HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
+if not HUGGINGFACE_API_KEY:
+    logger.error("Failure to load Hugging Face API key from .env file")
+    raise ValueError("Failure to load Hugging Face API key from .env file")

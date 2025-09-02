@@ -3,7 +3,11 @@ from .schemas import (
     URLAnalysisResponse,
     HealthResponse,
     ErrorResponse,
-    ThreatType
+    ThreatType,
+    TextAnalysisRequest,
+    TextChunkRequest,
+    TextAnalysisResponse,
+    PageTextAnalysisResponse
 )
 
 __all__ = [
@@ -11,5 +15,9 @@ __all__ = [
     "URLAnalysisResponse",
     "HealthResponse",
     "ErrorResponse",
-    "ThreatType"
+    "ThreatType",
+    "TextAnalysisRequest",
+    "TextChunkRequest",
+    "TextAnalysisResponse",
+    "PageTextAnalysisResponse"
 ]

@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CatchThePhish - Demo Testing Suite</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.2rem;
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .demo-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 2rem;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .demo-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            border-color: #007bff;
+        }
+
+        .demo-card h3 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        .demo-card p {
+            color: #6c757d;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .demo-features {
+            list-style: none;
+            margin-bottom: 1.5rem;
+        }
+
+        .demo-features li {
+            color: #495057;
+            margin: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .demo-features li:before {
+            content: "✓";
+            color: #28a745;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+
+        .btn {
+            background: #007bff;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: background 0.3s;
+            width: 100%;
+            text-align: center;
+        }
+
+        .btn:hover {
+            background: #0056b3;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .instructions {
+            background: #e7f3ff;
+            border: 2px solid #b3d7ff;
+            border-radius: 10px;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+
+        .instructions h3 {
+            color: #0056b3;
+            margin-bottom: 1rem;
+        }
+
+        .instructions ol {
+            padding-left: 2rem;
+            line-height: 1.8;
+        }
+
+        .instructions li {
+            margin: 0.5rem 0;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border: 2px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .warning h3 {
+            color: #856404;
+            margin-bottom: 1rem;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .status-safe { background: #28a745; }
+        .status-warning { background: #ffc107; }
+        .status-danger { background: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ CatchThePhish Demo Suite</h1>
+            <p>Test your phishing detection extension with realistic Singapore-based scam scenarios</p>
+        </div>
+
+        <div class="warning">
+            <h3>⚠️ Important Demo Guidelines</h3>
+            <p><strong>These are FAKE phishing websites created for testing purposes only.</strong> They demonstrate common phishing techniques used to target Singapore users. Never enter real personal information on these demo sites!</p>
+        </div>
+
+        <div class="instructions">
+            <h3>🧪 How to Test Your Extension</h3>
+            <ol>
+                <li><strong>Install Extension:</strong> Make sure CatchThePhish extension is installed and active</li>
+                <li><strong>Open Demo Sites:</strong> Click the demo links below to open different phishing scenarios</li>
+                <li><strong>Test Features:</strong>
+                    <ul style="margin: 0.5rem 0; padding-left: 2rem;">
+                        <li>Click "Scan This Website" button to test comprehensive page analysis</li>
+                        <li>Select suspicious text and right-click to test text analysis</li>
+                        <li>Hover over suspicious links to test URL detection</li>
+                    </ul>
+                </li>
+                <li><strong>Observe Results:</strong> Check if the extension correctly identifies threats and provides warnings</li>
+                <li><strong>Compare:</strong> Test on legitimate sites to ensure no false positives</li>
+            </ol>
+        </div>
+
+        <div class="demo-grid">
+            <div class="demo-card" onclick="openDemo('singapore-phishing-demo.html')">
+                <h3>🇸🇬 Government Services Scam</h3>
+                <p>Sophisticated phishing site mimicking Singapore government services (SingPass, IRAS, etc.)</p>
+                <ul class="demo-features">
+                    <li>Fake SingPass verification</li>
+                    <li>Urgent security warnings</li>
+                    <li>Government impersonation</li>
+                    <li>Social engineering tactics</li>
+                    <li>Countdown timers</li>
+                </ul>
+                <a href="singapore-phishing-demo.html" target="_blank" class="btn btn-danger">
+                    <span class="status-indicator status-danger"></span>
+                    Launch Government Scam Demo
+                </a>
+            </div>
+
+            <div class="demo-card" onclick="openDemo('banking-phishing-demo.html')">
+                <h3>🏦 Banking Security Scam</h3>
+                <p>Realistic banking phishing site targeting Singapore bank customers</p>
+                <ul class="demo-features">
+                    <li>Fake DBS security alert</li>
+                    <li>Credential harvesting form</li>
+                    <li>Urgency manipulation</li>
+                    <li>Fake testimonials</li>
+                    <li>Malicious download links</li>
+                </ul>
+                <a href="banking-phishing-demo.html" target="_blank" class="btn btn-danger">
+                    <span class="status-indicator status-danger"></span>
+                    Launch Banking Scam Demo
+                </a>
+            </div>
+
+            <div class="demo-card">
+                <h3>📋 Test URL Collection</h3>
+                <p>Comprehensive list of suspicious URLs and text patterns for manual testing</p>
+                <ul class="demo-features">
+                    <li>Typosquatting examples</li>
+                    <li>Subdomain abuse cases</li>
+                    <li>Social engineering phrases</li>
+                    <li>Legitimate vs. suspicious comparison</li>
+                </ul>
+                <a href="demo-test-urls.txt" target="_blank" class="btn">
+                    <span class="status-indicator status-warning"></span>
+                    View Test URLs & Phrases
+                </a>
+            </div>
+
+            <div class="demo-card">
+                <h3>✅ Legitimate Site Test</h3>
+                <p>Test against real Singapore government site to check for false positives</p>
+                <ul class="demo-features">
+                    <li>Official gov.sg domain</li>
+                    <li>Legitimate content</li>
+                    <li>Should NOT trigger alerts</li>
+                    <li>Baseline comparison</li>
+                </ul>
+                <a href="https://www.gov.sg/" target="_blank" class="btn">
+                    <span class="status-indicator status-safe"></span>
+                    Test on Real Gov.sg Site
+                </a>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <h3>🎯 What Your Extension Should Detect</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1rem;">
+                <div>
+                    <h4 style="color: #dc3545; margin-bottom: 0.5rem;">❌ Should Flag as Suspicious:</h4>
+                    <ul style="padding-left: 2rem; line-height: 1.6;">
+                        <li>Fake government domains</li>
+                        <li>Urgent language and threats</li>
+                        <li>Password/credential requests</li>
+                        <li>Countdown timers</li>
+                        <li>Suspicious download links</li>
+                        <li>Typosquatted domains</li>
+                        <li>Social engineering tactics</li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 style="color: #28a745; margin-bottom: 0.5rem;">✅ Should NOT Flag:</h4>
+                    <ul style="padding-left: 2rem; line-height: 1.6;">
+                        <li>Official .gov.sg domains</li>
+                        <li>Legitimate bank websites</li>
+                        <li>Normal business language</li>
+                        <li>Standard contact forms</li>
+                        <li>Educational content</li>
+                        <li>Regular promotional text</li>
+                        <li>Informational pages</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 3rem; padding: 2rem; background: #f8f9fa; border-radius: 10px;">
+            <h3>🚀 Ready to Present?</h3>
+            <p style="margin: 1rem 0; color: #6c757d;">Use these demo sites to showcase your extension's capabilities during the hackathon presentation!</p>
+            <p style="font-size: 0.9rem; color: #868e96;">Remember: These are educational tools to demonstrate phishing detection - never use real credentials!</p>
+        </div>
+    </div>
+
+    <script>
+        function openDemo(filename) {
+            // Add a small delay to show interaction
+            setTimeout(() => {
+                try {
+                    window.open(filename, '_blank');
+                } catch (error) {
+                    console.warn('Could not open demo:', error);
+                    // Fallback: navigate in current window
+                    window.location.href = filename;
+                }
+            }, 100);
+        }
+
+        // Add some interactive feedback
+        document.querySelectorAll('.demo-card').forEach(card => {
+            card.addEventListener('click', function() {
+                // Add click effect
+                this.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 150);
+            });
+        });
+
+        // Show extension status
+        function checkExtensionStatus() {
+            // This is a simple check - in a real scenario you'd check if the extension is actually installed
+            const statusDiv = document.createElement('div');
+            statusDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #28a745;
+                color: white;
+                padding: 1rem;
+                border-radius: 8px;
+                font-weight: bold;
+                z-index: 1000;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            `;
+            statusDiv.innerHTML = '🛡️ CatchThePhish Extension Active';
+            document.body.appendChild(statusDiv);
+
+            // Hide after 3 seconds
+            setTimeout(() => {
+                statusDiv.style.opacity = '0';
+                statusDiv.style.transition = 'opacity 0.5s';
+                setTimeout(() => statusDiv.remove(), 500);
+            }, 3000);
+        }
+
+        // Check status on load
+        setTimeout(checkExtensionStatus, 1000);
+    </script>
+</body>
+</html>

@@ -57,29 +57,40 @@ class PhishingDetector {
 
     setupMessageListener() {
         chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-            if (request.action === 'urlCheckResult') {
-                this.handleURLCheckResult(request.data);
+            switch (request.action) {
+                case 'urlCheckResult':
+                    this.handleURLCheckResult(request.data);
+                    sendResponse({ success: true });
+                    break;
+                case 'textAnalysisResult':
+                    this.handleTextAnalysisResult(request.data);
+                    sendResponse({ success: true });
+                    break;
+                case 'extractTextChunks':
+                    const chunks = this.extractTextChunks();
+                    sendResponse(chunks);
+                    break;
+                case 'extractAllLinks':
+                    try {
+                        console.log('CatchThePhish: Extracting all links from page');
+                        const links = Array.from(document.querySelectorAll('a[href]'))
+                            .map(a => a.href)
+                            .filter(href => href.startsWith('http'))
+                            .slice(0, 20); // Limit to 20 links
+                        
+                        console.log('CatchThePhish: Found links:', links);
+                        sendResponse(links);
+                    } catch (error) {
+                        console.error('CatchThePhish: Error extracting links:', error);
+                        sendResponse([]);
+                    }
+                    break;
+                default:
+                    console.warn('CatchThePhish: Unknown action in content script:', request.action);
+                    sendResponse({ error: 'Unknown action' });
+                    break;
             }
-        });
-
-        // Add this message handler to content.js
-        chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-            if (request.action === 'extractAllLinks') {
-                try {
-                    console.log('CatchThePhish: Extracting all links from page');
-                    const links = Array.from(document.querySelectorAll('a[href]'))
-                        .map(a => a.href)
-                        .filter(href => href.startsWith('http'))
-                        .slice(0, 20); // Limit to 20 links
-                    
-                    console.log('CatchThePhish: Found links:', links);
-                    sendResponse(links);
-                } catch (error) {
-                    console.error('CatchThePhish: Error extracting links:', error);
-                    sendResponse([]);
-                }
-                return true; // Keep message channel open for async response
-            }
+            return true; // Keep message channel open for async response
         });
     }
 
@@ -88,7 +99,10 @@ class PhishingDetector {
             const url = linkElement.href;
             
             if (!InputValidator.isValidURL(url)) {
-                console.warn('CatchThePhish: Invalid URL detected:', url);
+                // Skip invalid URLs (javascript:, mailto:, etc.) silently - this is expected behavior
+                if (url && !url.startsWith('javascript:') && !url.startsWith('mailto:') && !url.startsWith('tel:') && url !== '#') {
+                    console.warn('CatchThePhish: Invalid URL detected:', url);
+                }
                 return;
             }
             
@@ -258,6 +272,151 @@ class PhishingDetector {
         warning.setAttribute('aria-live', 'assertive');
         
         return warning;
+    }
+
+    extractTextChunks() {
+        const chunks = [];
+        const textElements = document.querySelectorAll('p, div, span, h1, h2, h3, h4, h5, h6, li, td, th');
+        
+        textElements.forEach((element, index) => {
+            const text = element.textContent?.trim();
+            if (text && text.length > 20 && text.length < 1000) {
+                chunks.push({
+                    id: `chunk_${index}`,
+                    text: text,
+                    element_type: element.tagName.toLowerCase(),
+                    position: this.getElementPosition(element)
+                });
+            }
+        });
+        
+        console.log('CatchThePhish: Extracted', chunks.length, 'text chunks from page');
+        return chunks.slice(0, 50); // Limit to 50 chunks to avoid overwhelming the backend
+    }
+
+    getElementPosition(element) {
+        const rect = element.getBoundingClientRect();
+        return {
+            top: rect.top + window.scrollY,
+            left: rect.left + window.scrollX
+        };
+    }
+
+    handleTextAnalysisResult(data) {
+        if (data.error) {
+            this.showTextAnalysisNotification(
+                '❌ Text Analysis Failed',
+                'Unable to analyze selected text',
+                'error'
+            );
+            return;
+        }
+
+        const { result, text } = data;
+        const truncatedText = text.length > 100 ? text.substring(0, 100) + '...' : text;
+        
+        if (result.is_suspicious) {
+            this.showTextAnalysisNotification(
+                '⚠️ Suspicious Text Detected',
+                `"${truncatedText}" - ${result.reasons.join(', ')}`,
+                'warning'
+            );
+        } else {
+            this.showTextAnalysisNotification(
+                '✅ Text Appears Safe',
+                `"${truncatedText}" - No threats detected`,
+                'safe'
+            );
+        }
+    }
+
+    showTextAnalysisNotification(title, message, type) {
+        // Remove existing notification
+        const existing = document.getElementById('ctp-text-analysis-notification');
+        if (existing) {
+            existing.remove();
+        }
+
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.id = 'ctp-text-analysis-notification';
+        notification.className = `ctp-text-notification ctp-${type}`;
+        
+        notification.innerHTML = `
+            <div class="ctp-notification-header">
+                <strong>${title}</strong>
+                <button class="ctp-close-btn" onclick="this.parentElement.parentElement.remove()">×</button>
+            </div>
+            <div class="ctp-notification-body">${message}</div>
+        `;
+
+        // Add styles
+        const style = document.createElement('style');
+        style.textContent = `
+            .ctp-text-notification {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                max-width: 400px;
+                padding: 15px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                z-index: 999999;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                font-size: 14px;
+                line-height: 1.4;
+            }
+            .ctp-warning {
+                background: #fff3cd;
+                border: 1px solid #ffeaa7;
+                color: #856404;
+            }
+            .ctp-safe {
+                background: #d4edda;
+                border: 1px solid #c3e6cb;
+                color: #155724;
+            }
+            .ctp-error {
+                background: #f8d7da;
+                border: 1px solid #f5c6cb;
+                color: #721c24;
+            }
+            .ctp-notification-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 8px;
+            }
+            .ctp-close-btn {
+                background: none;
+                border: none;
+                font-size: 18px;
+                cursor: pointer;
+                padding: 0;
+                width: 20px;
+                height: 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .ctp-notification-body {
+                word-wrap: break-word;
+            }
+        `;
+        
+        if (!document.getElementById('ctp-text-notification-styles')) {
+            style.id = 'ctp-text-notification-styles';
+            document.head.appendChild(style);
+        }
+
+        document.body.appendChild(notification);
+
+        // Auto-remove after 8 seconds
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 8000);
     }
 
     hideWarning() {
