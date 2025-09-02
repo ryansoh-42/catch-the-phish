@@ -99,7 +99,10 @@ class PhishingDetector {
             const url = linkElement.href;
             
             if (!InputValidator.isValidURL(url)) {
-                console.warn('CatchThePhish: Invalid URL detected:', url);
+                // Skip invalid URLs (javascript:, mailto:, etc.) silently - this is expected behavior
+                if (url && !url.startsWith('javascript:') && !url.startsWith('mailto:') && !url.startsWith('tel:') && url !== '#') {
+                    console.warn('CatchThePhish: Invalid URL detected:', url);
+                }
                 return;
             }
             

@@ -1,0 +1,107 @@
+# CatchThePhish Demo - Test URLs for Extension Detection
+# This file contains various types of suspicious URLs that the extension should detect
+
+## Singapore Government Impersonation URLs
+https://singpass-gov-sg.fake-domain.com/login
+https://gov-sg-verify.suspicious-site.net/identity
+https://singapore-gov.scam-domain.org/cpf-update
+https://iras-gov-singapore.phishing-site.com/tax-refund
+https://moh-gov-sg.fake-health-portal.net/vaccination
+https://hdb-singapore-gov.suspicious-housing.com/application
+
+## Banking Phishing URLs (Singapore Banks)
+https://dbs-bank-singapore.fake-banking.com/login
+https://ocbc-secure-sg.phishing-bank.net/verify
+https://uob-bank-sg.scam-finance.org/emergency
+https://maybank-singapore.fake-financial.com/security
+https://posb-dbs-sg.suspicious-banking.net/update
+https://citibank-singapore.phishing-finance.com/alert
+
+## E-commerce & Shopping Scams
+https://shopee-singapore.fake-shopping.com/promotion
+https://lazada-sg.scam-ecommerce.net/mega-sale
+https://carousell-singapore.fake-marketplace.org/deal
+https://qoo10-sg.phishing-shopping.com/discount
+
+## Cryptocurrency & Investment Scams
+https://binance-singapore.fake-crypto.com/trading
+https://coinbase-sg.scam-investment.net/wallet
+https://crypto-sg-exchange.phishing-finance.org/signup
+https://bitcoin-singapore-investment.fake-trading.com/profit
+
+## Utility & Service Scams
+https://sp-utilities-sg.fake-services.com/bill-payment
+https://singtel-singapore.scam-telecom.net/account
+https://starhub-sg.phishing-mobile.com/upgrade
+https://grab-singapore.fake-transport.org/driver-bonus
+
+## Social Engineering URLs
+https://linkedin-sg-premium.fake-social.com/upgrade
+https://facebook-security-sg.scam-social.net/verification
+https://whatsapp-sg-update.phishing-messenger.com/download
+https://telegram-singapore.fake-messaging.org/security
+
+## Typosquatting Examples (slight misspellings of legitimate sites)
+https://sinpass.gov.sg/login  # Missing 'g' in singpass
+https://gob.sg/services       # 'gob' instead of 'gov'
+https://dbs-bank.com.sg       # Extra .com before .sg
+https://ocbc.sg.com          # Wrong TLD order
+
+## Subdomain Abuse
+https://verification.gov.sg.fake-domain.com/
+https://secure.dbs.com.scam-site.net/
+https://official.singpass.phishing-domain.org/
+
+## Homograph Attacks (look-alike characters)
+https://gоv.sg/services      # Cyrillic 'о' instead of Latin 'o'
+https://ѕingpass.gov.sg      # Cyrillic 'ѕ' instead of Latin 's'
+
+## Legitimate URLs (should NOT be flagged)
+https://www.gov.sg/
+https://www.singpass.gov.sg/
+https://www.dbs.com.sg/
+https://www.ocbc.com/
+https://www.uob.com.sg/
+https://www.iras.gov.sg/
+https://www.moh.gov.sg/
+https://www.hdb.gov.sg/
+https://www.cpf.gov.sg/
+
+## Test Phrases for Text Analysis
+# These should be detected as suspicious when found in webpage text:
+
+"Your SingPass account will be suspended if you don't verify immediately"
+"Urgent: Complete your identity verification within 24 hours or lose access"
+"You have won $50,000 SGD in the Singapore Government Lucky Draw"
+"Click here to claim your IRAS tax refund of $3,247.50"
+"Your DBS account shows suspicious activity - verify now to prevent closure"
+"Limited time: Invest in Bitcoin and earn 500% returns guaranteed"
+"CPF Board: Update your details or forfeit your retirement savings"
+"MOH Alert: Your vaccination certificate has expired - renew immediately"
+"Congratulations! You qualify for a $100,000 government grant"
+"Your Grab account has been compromised - secure it now"
+
+## Social Engineering Phrases
+"Act now or lose this opportunity forever"
+"Only 3 spots left - register immediately"
+"This message will self-destruct in 30 minutes"
+"Forward this to 10 friends to avoid bad luck"
+"Your computer is infected - download our antivirus now"
+"You are the 1000th visitor - claim your prize"
+"Verify your identity to prevent account termination"
+"Update your security settings within 1 hour"
+
+## Demo Instructions
+# To test the extension:
+# 1. Load the demo HTML files in your browser
+# 2. Install and activate the CatchThePhish extension
+# 3. Try the "Scan This Website" button on each demo page
+# 4. Select suspicious text and right-click to test text analysis
+# 5. Hover over suspicious links to test URL detection
+# 6. Check that legitimate content is not flagged as suspicious
+
+## Expected Detection Results:
+# ✅ Should detect: Urgent language, fake government domains, credential harvesting forms
+# ✅ Should detect: Suspicious URLs with typos, wrong TLDs, fake subdomains  
+# ✅ Should detect: Social engineering tactics, fake testimonials, countdown timers
+# ❌ Should NOT detect: Legitimate government/bank websites, normal business language

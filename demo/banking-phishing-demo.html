@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DBS Bank - Security Alert</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏦</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .header {
+            background: #e60012;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .security-alert {
+            background: linear-gradient(45deg, #ff4444, #cc0000);
+            color: white;
+            text-align: center;
+            padding: 1rem;
+            font-weight: bold;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0.7; }
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            margin: 1rem 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .urgent-box {
+            border: 2px solid #ff4444;
+            border-radius: 8px;
+            padding: 1.5rem;
+            background: #fff5f5;
+            margin: 1rem 0;
+        }
+
+        .form-group {
+            margin: 1rem 0;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .btn-danger {
+            background: #e60012;
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin: 1rem 0;
+        }
+
+        .btn-danger:hover {
+            background: #cc0000;
+        }
+
+        .phishing-text {
+            background: #fffacd;
+            border-left: 4px solid #ffa500;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        .fake-link {
+            color: #e60012;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            background: #333;
+            color: white;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">🏦 DBS Bank</div>
+        <div>Digital Banking - Singapore</div>
+    </header>
+
+    <div class="security-alert">
+        🚨 SECURITY BREACH DETECTED - IMMEDIATE ACTION REQUIRED
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2 style="color: #e60012; margin-bottom: 1rem;">⚠️ Critical Security Alert</h2>
+            
+            <div class="urgent-box">
+                <h3>Your Account Has Been Compromised!</h3>
+                <p>We detected unauthorized access attempts from multiple locations:</p>
+                <ul style="margin: 1rem 0; padding-left: 2rem;">
+                    <li>📍 Suspicious login from Nigeria at 3:42 AM</li>
+                    <li>📍 Failed password attempts from Russia</li>
+                    <li>💳 Unauthorized transaction of $5,847.32 pending</li>
+                </ul>
+                <p><strong style="color: #e60012;">Your account will be frozen in 30 minutes unless you verify your identity immediately!</strong></p>
+            </div>
+
+            <div class="phishing-text">
+                <p><strong>🔥 URGENT ACTION REQUIRED:</strong></p>
+                <p>To prevent permanent account closure and protect your savings of <strong>$47,382.19</strong>, please verify your banking credentials below.</p>
+                <p>This verification is required under the new <span style="background: yellow;">Monetary Authority of Singapore Emergency Protocol 2024</span>.</p>
+            </div>
+
+            <form onsubmit="return false;">
+                <div class="form-group">
+                    <label>🆔 Internet Banking User ID:</label>
+                    <input type="text" placeholder="Enter your DBS iBanking User ID" required>
+                </div>
+
+                <div class="form-group">
+                    <label>🔐 Internet Banking Password:</label>
+                    <input type="password" placeholder="Enter your iBanking password" required>
+                </div>
+
+                <div class="form-group">
+                    <label>📱 SMS OTP (we will send to your registered mobile):</label>
+                    <input type="text" placeholder="6-digit OTP" maxlength="6" required>
+                </div>
+
+                <div class="form-group">
+                    <label>💳 Debit Card Number (for additional verification):</label>
+                    <input type="text" placeholder="16-digit card number" maxlength="19" required>
+                </div>
+
+                <div class="form-group">
+                    <label>📅 Card Expiry & CVV:</label>
+                    <div style="display: flex; gap: 1rem;">
+                        <input type="text" placeholder="MM/YY" maxlength="5" style="flex: 1;" required>
+                        <input type="text" placeholder="CVV" maxlength="3" style="flex: 1;" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-danger" onclick="showBankingAlert()">
+                    🛡️ SECURE MY ACCOUNT NOW
+                </button>
+            </form>
+
+            <div style="margin-top: 2rem; padding: 1rem; background: #f0f0f0; border-radius: 4px;">
+                <p><strong>⏰ Time Sensitive:</strong> This security verification expires in <span id="timer" style="color: red; font-weight: bold;">29:45</span></p>
+                <p style="margin-top: 0.5rem;">For immediate assistance, call our <span class="fake-link" onclick="showSuspiciousPopup()">Emergency Fraud Hotline: +65 6123-4567</span></p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>🔗 Quick Action Links</h3>
+            <p>Additional steps to secure your account:</p>
+            <div style="margin: 1rem 0;">
+                <a href="https://dbs-bank-sg-secure.fake-domain.com/verify" class="fake-link" onclick="showSuspiciousPopup(); return false;">
+                    → Update Security Settings
+                </a><br><br>
+                <a href="https://secure-dbs-singapore.suspicious-site.net/emergency" class="fake-link" onclick="showSuspiciousPopup(); return false;">
+                    → Emergency Account Protection
+                </a><br><br>
+                <a href="https://dbs-security-app-2024.fake-banking.com/download/dbs-secure.apk" class="fake-link" onclick="showSuspiciousPopup(); return false;">
+                    → Download DBS Security App (Updated 2024)
+                </a>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>💬 What Our Customers Are Saying</h3>
+            <div style="border-left: 3px solid #e60012; padding-left: 1rem; margin: 1rem 0; font-style: italic;">
+                "I almost lost $20,000 to hackers but this emergency verification saved my account!" - Jennifer L.
+            </div>
+            <div style="border-left: 3px solid #e60012; padding-left: 1rem; margin: 1rem 0; font-style: italic;">
+                "The 30-minute deadline was real - my colleague's account got frozen because he didn't act fast enough." - Robert K.
+            </div>
+            
+            <div class="phishing-text">
+                <p><strong>🎯 Educational Note:</strong> Real banks will NEVER:</p>
+                <ul style="margin: 0.5rem 0; padding-left: 2rem;">
+                    <li>Ask for passwords via email or suspicious websites</li>
+                    <li>Create artificial urgency with countdown timers</li>
+                    <li>Request full card details for "verification"</li>
+                    <li>Use threatening language about account closure</li>
+                    <li>Send links to non-official domains</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>© 2024 DBS Bank Ltd. All rights reserved.</p>
+        <p style="font-size: 0.9rem; margin-top: 0.5rem; opacity: 0.8;">
+            🚨 DEMO SITE FOR PHISHING DETECTION TESTING - NOT REAL DBS WEBSITE 🚨
+        </p>
+    </footer>
+
+    <script>
+        function showBankingAlert() {
+            alert('🚨 PHISHING ATTEMPT DETECTED!\n\nThis is a FAKE banking website designed to steal your credentials!\n\nReal banks NEVER ask for:\n- Full passwords online\n- Complete card details\n- Urgent "verification" under time pressure\n\nYour extension should have flagged this as suspicious!');
+        }
+
+        function showSuspiciousPopup() {
+            alert('🚨 MALICIOUS LINK BLOCKED!\n\nThis link would typically:\n- Install banking trojans\n- Redirect to credential harvesting pages\n- Download fake banking apps\n\nYour CatchThePhish extension should warn about these threats!');
+        }
+
+        // Countdown timer
+        let timeLeft = 29 * 60 + 45; // 29:45
+        function updateTimer() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById('timer').textContent = 
+                `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            timeLeft--;
+            if (timeLeft < 0) timeLeft = 30 * 60; // Reset
+        }
+        
+        setInterval(updateTimer, 1000);
+        updateTimer();
+
+        // Add some dynamic threatening content
+        setTimeout(() => {
+            const alert = document.querySelector('.security-alert');
+            alert.innerHTML = '🚨 FINAL WARNING: Account closure imminent - 15 minutes remaining!';
+        }, 8000);
+    </script>
+</body>
+</html>
