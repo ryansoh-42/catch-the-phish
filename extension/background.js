@@ -35,7 +35,28 @@ class BackgroundService {
             this.handleMessage(request, sender, sendResponse);
             return true;
         });
+        
+        // Create context menu for text analysis
+        this.createContextMenu();
+        
         console.log('CatchThePhish: Background service initialized');
+    }
+
+    createContextMenu() {
+        // Clear existing context menus to prevent duplicates
+        chrome.contextMenus.removeAll(() => {
+            chrome.contextMenus.create({
+                id: "scanSelectedText",
+                title: "🛡️ Scan for Phishing Threats",
+                contexts: ["selection"]
+            });
+        });
+
+        chrome.contextMenus.onClicked.addListener((info, tab) => {
+            if (info.menuItemId === "scanSelectedText" && info.selectionText) {
+                this.analyzeSelectedText(info.selectionText, tab);
+            }
+        });
     }
 
     async handleMessage(request, sender, sendResponse) {
@@ -84,8 +105,8 @@ class BackgroundService {
                     break;
 
                 case 'scanCurrentPage':
-                    // Handle this asynchronously
-                    this.handleScanCurrentPage(request, sender, sendResponse);
+                    // Handle this asynchronously with text analysis
+                    this.handleScanCurrentPageWithText(request, sender, sendResponse);
                     return; // Don't call sendResponse here
 
                 case 'reportPhishing':
@@ -98,6 +119,15 @@ class BackgroundService {
                 case 'getStats':
                     const stats = await this.getProtectionStats();
                     sendResponse(stats);
+                    break;
+
+                case 'analyzeText':
+                    if (request.text) {
+                        const result = await this.performTextAnalysis(request.text);
+                        sendResponse(result);
+                    } else {
+                        sendResponse({ error: 'No text provided' });
+                    }
                     break;
 
                 case 'resetStats':
@@ -223,6 +253,198 @@ class BackgroundService {
                 reason: 'Scan failed - please try again',
                 error: true 
             });
+        }
+    }
+
+    async handleScanCurrentPageWithText(request, sender, sendResponse) {
+        console.log('🔍 CatchThePhish: Starting comprehensive page scan with text analysis');
+        console.log('🔍 URL:', request.url);
+        console.log('🔍 TabID:', request.tabId);
+        
+        // Use tabId from request instead of sender.tab.id
+        if (!request.url || !request.tabId) {
+            console.error('❌ CatchThePhish: Missing URL or tab ID');
+            console.error('❌ URL check:', !!request.url, 'TabID check:', !!request.tabId);
+            sendResponse({ 
+                success: false,
+                error: 'Unable to scan page - missing information' 
+            });
+            return;
+        }
+
+        try {
+            // Extract data needed for both analyses
+            console.log('🔗 CatchThePhish: Extracting links from tab:', request.tabId);
+            const linksPromise = this.extractLinksFromPage(request.tabId);
+            
+            console.log('📝 CatchThePhish: Extracting text chunks from tab:', request.tabId);
+            const textChunksPromise = chrome.tabs.sendMessage(request.tabId, {
+                action: 'extractTextChunks'
+            });
+
+            // Wait for both extractions to complete
+            const [links, rawTextChunks] = await Promise.all([linksPromise, textChunksPromise]);
+            console.log('🔗 CatchThePhish: Extracted links:', links);
+            console.log('📝 CatchThePhish: Extracted text chunks:', rawTextChunks?.length || 0);
+
+            // 1. & 2. Perform URL scanning and text analysis in parallel
+            console.log('🚀 CatchThePhish: Starting parallel URL and text analysis');
+            
+            const urlAnalysisPromise = this.performComprehensiveScan(request.url, links);
+            const textAnalysisPromise = this.performPageTextAnalysisWithRetry(rawTextChunks);
+
+            const [urlPageResult, textResult] = await Promise.all([
+                urlAnalysisPromise,
+                textAnalysisPromise
+            ]);
+            
+            console.log('🌐 CatchThePhish: URL page scan result:', urlPageResult);
+            console.log('📝 CatchThePhish: Text analysis result:', textResult);
+            
+            // 3. Combine both URL and text results
+            const combinedResult = {
+                success: true,
+                url_analysis: {
+                    isSuspicious: urlPageResult.is_suspicious || false,
+                    confidence: urlPageResult.confidence || 0,
+                    reason: urlPageResult.reason || 'No URL threats detected',
+                    links_scanned: urlPageResult.links_scanned || 0,
+                    suspicious_links_found: urlPageResult.suspicious_links_found || 0,
+                    suspicious_links: urlPageResult.suspicious_links || []
+                },
+                text_analysis: textResult,
+                overall_assessment: this.combineUrlAndTextResults(urlPageResult, textResult),
+                scan_summary: this.generateComprehensiveScanSummary(urlPageResult, textResult),
+                timestamp: Date.now()
+            };
+
+            // 4. Update stats using comprehensive results
+            if (urlPageResult.success && urlPageResult.links_scanned !== undefined) {
+                this.stats.urlsScanned += urlPageResult.links_scanned;
+                this.stats.threatsBlocked += urlPageResult.suspicious_links_found || 0;
+            } else {
+                this.stats.urlsScanned++;
+            }
+            
+            if (combinedResult.overall_assessment.is_suspicious) {
+                this.stats.threatsBlocked++;
+            }
+
+            // 5. Store scan result
+            this.pageStates.set(request.tabId, {
+                url: request.url,
+                result: combinedResult,
+                scanned: true,
+                timestamp: Date.now()
+            });
+
+            console.log('📤 CatchThePhish: Sending comprehensive scan result:', combinedResult);
+            sendResponse(combinedResult);
+            
+        } catch (error) {
+            console.error('💥 CatchThePhish: Comprehensive scan failed:', error);
+            sendResponse({ 
+                success: false,
+                error: 'Scan failed - please try again',
+                timestamp: Date.now()
+            });
+        }
+    }
+
+    combineAnalysisResults(urlResult, textResult) {
+        const urlSuspicious = urlResult.isSuspicious;
+        const textSuspicious = textResult.overall_risk === 'dangerous' || textResult.overall_risk === 'suspicious';
+        
+        if (urlSuspicious && textSuspicious) {
+            return {
+                risk_level: 'high',
+                is_suspicious: true,
+                confidence: Math.max(urlResult.confidence, 0.8),
+                primary_concern: 'Both URL and content appear suspicious'
+            };
+        } else if (urlSuspicious || textSuspicious) {
+            return {
+                risk_level: 'medium',
+                is_suspicious: true,
+                confidence: urlSuspicious ? urlResult.confidence : 0.6,
+                primary_concern: urlSuspicious ? 'Suspicious URL detected' : 'Suspicious content detected'
+            };
+        } else {
+            return {
+                risk_level: 'low',
+                is_suspicious: false,
+                confidence: 0.9,
+                primary_concern: 'No threats detected'
+            };
+        }
+    }
+
+    combineUrlAndTextResults(urlPageResult, textResult) {
+        const urlSuspicious = urlPageResult.is_suspicious || false;
+        const textSuspicious = textResult.overall_risk === 'dangerous' || textResult.overall_risk === 'suspicious';
+        
+        if (urlSuspicious && textSuspicious) {
+            return {
+                risk_level: 'high',
+                is_suspicious: true,
+                confidence: Math.max(urlPageResult.confidence || 0, 0.8),
+                primary_concern: `Both URLs and content appear suspicious (${urlPageResult.suspicious_links_found || 0} suspicious links, ${textResult.suspicious_chunks?.length || 0} suspicious text chunks)`
+            };
+        } else if (urlSuspicious) {
+            return {
+                risk_level: 'medium',
+                is_suspicious: true,
+                confidence: urlPageResult.confidence || 0.6,
+                primary_concern: `Suspicious URLs detected (${urlPageResult.suspicious_links_found || 0} suspicious links found)`
+            };
+        } else if (textSuspicious) {
+            return {
+                risk_level: 'medium',
+                is_suspicious: true,
+                confidence: 0.6,
+                primary_concern: `Suspicious content detected (${textResult.suspicious_chunks?.length || 0} suspicious text chunks)`
+            };
+        } else {
+            return {
+                risk_level: 'low',
+                is_suspicious: false,
+                confidence: 0.9,
+                primary_concern: 'No threats detected'
+            };
+        }
+    }
+
+    generateScanSummary(urlResult, textResult) {
+        const urlSuspicious = urlResult.isSuspicious;
+        const textSuspicious = textResult.overall_risk === 'dangerous' || textResult.overall_risk === 'suspicious';
+        
+        if (urlSuspicious && textSuspicious) {
+            return `⚠️ High Risk: Suspicious URL and content detected (${textResult.suspicious_chunks.length} threats found)`;
+        } else if (urlSuspicious) {
+            return `⚠️ Medium Risk: Suspicious URL detected - ${urlResult.reason}`;
+        } else if (textSuspicious) {
+            return `⚠️ Medium Risk: Suspicious content detected (${textResult.suspicious_chunks.length} threats found)`;
+        } else {
+            return `✅ Safe: No threats detected in URL or content (${textResult.total_chunks_analyzed} chunks analyzed)`;
+        }
+    }
+
+    generateComprehensiveScanSummary(urlPageResult, textResult) {
+        const urlSuspicious = urlPageResult.is_suspicious || false;
+        const textSuspicious = textResult.overall_risk === 'dangerous' || textResult.overall_risk === 'suspicious';
+        const linksScanned = urlPageResult.links_scanned || 0;
+        const suspiciousLinks = urlPageResult.suspicious_links_found || 0;
+        const chunksAnalyzed = textResult.total_chunks_analyzed || 0;
+        const suspiciousChunks = textResult.suspicious_chunks?.length || 0;
+        
+        if (urlSuspicious && textSuspicious) {
+            return `⚠️ High Risk: Found ${suspiciousLinks} suspicious URLs and ${suspiciousChunks} suspicious content blocks`;
+        } else if (urlSuspicious) {
+            return `⚠️ Medium Risk: Found ${suspiciousLinks} suspicious URLs (scanned ${linksScanned} links total)`;
+        } else if (textSuspicious) {
+            return `⚠️ Medium Risk: Found ${suspiciousChunks} suspicious content blocks (analyzed ${chunksAnalyzed} text chunks)`;
+        } else {
+            return `✅ Safe: Scanned ${linksScanned} URLs and ${chunksAnalyzed} text chunks - no threats detected`;
         }
     }
 
@@ -872,6 +1094,254 @@ class BackgroundService {
         }
         
         return { serverAvailable: false };
+    }
+
+    async analyzeSelectedText(selectedText, tab) {
+        try {
+            console.log('CatchThePhish: Analyzing selected text:', selectedText.substring(0, 100) + '...');
+            
+            const result = await this.performTextAnalysis(selectedText);
+            
+            // Send result to content script for display
+            if (tab?.id) {
+                chrome.tabs.sendMessage(tab.id, {
+                    action: 'textAnalysisResult',
+                    data: {
+                        text: selectedText,
+                        result: result,
+                        timestamp: Date.now()
+                    }
+                });
+            }
+            
+        } catch (error) {
+            console.error('CatchThePhish: Text analysis failed:', error);
+            
+            if (tab?.id) {
+                chrome.tabs.sendMessage(tab.id, {
+                    action: 'textAnalysisResult',
+                    data: {
+                        text: selectedText,
+                        result: {
+                            is_suspicious: false,
+                            confidence: 0,
+                            risk_level: 'error',
+                            reasons: ['Analysis failed - please try again'],
+                            source: 'error'
+                        },
+                        error: true,
+                        timestamp: Date.now()
+                    }
+                });
+            }
+        }
+    }
+
+    async performTextAnalysis(text, maxRetries = 1, retryDelay = 2000) {
+        for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
+            try {
+                console.log(`🔄 CatchThePhish: Single text analysis attempt ${attempt}/${maxRetries + 1}`);
+                
+                const response = await fetch('http://localhost:8000/text-analysis/analyze-text', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        context: 'user_selection'
+                    }),
+                    signal: AbortSignal.timeout(10000) // 10 second timeout for single text
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                console.log(`✅ CatchThePhish: Single text analysis succeeded on attempt ${attempt}`);
+                console.log('CatchThePhish: Text analysis result:', result);
+                return result;
+
+            } catch (error) {
+                console.error(`CatchThePhish: Single text analysis attempt ${attempt} failed:`, error);
+                
+                if (attempt <= maxRetries) {
+                    console.log(`⏱️ CatchThePhish: Retrying single text analysis in ${retryDelay}ms...`);
+                    await this.delay(retryDelay);
+                } else {
+                    console.error('💥 CatchThePhish: All single text analysis attempts failed, using local fallback');
+                    // Fallback to basic local analysis
+                    return {
+                        is_suspicious: this.basicTextCheck(text),
+                        confidence: 0.3,
+                        risk_level: 'suspicious',
+                        reasons: ['Basic local analysis - backend unavailable'],
+                        source: 'local_fallback'
+                    };
+                }
+            }
+        }
+    }
+
+    basicTextCheck(text) {
+        const suspiciousKeywords = [
+            'urgent', 'verify', 'suspended', 'click here', 'act now',
+            'limited time', 'congratulations', 'winner', 'prize',
+            'account locked', 'security alert', 'update payment'
+        ];
+        
+        const lowerText = text.toLowerCase();
+        return suspiciousKeywords.some(keyword => lowerText.includes(keyword));
+    }
+
+    async performPageTextAnalysis(tabId) {
+        try {
+            console.log('CatchThePhish: Performing page text analysis for tab:', tabId);
+            
+            // Extract text chunks from the page
+            const rawTextChunks = await chrome.tabs.sendMessage(tabId, {
+                action: 'extractTextChunks'
+            });
+
+            return await this.performPageTextAnalysisWithRetry(rawTextChunks);
+
+        } catch (error) {
+            console.error('CatchThePhish: Page text analysis failed:', error);
+            
+            return {
+                overall_risk: 'error',
+                suspicious_chunks: [],
+                total_chunks_analyzed: 0,
+                summary: 'Text analysis failed - please try again'
+            };
+        }
+    }
+
+    async performPageTextAnalysisWithRetry(rawTextChunks, maxRetries = 2, retryDelay = 3000) {
+        if (!rawTextChunks || rawTextChunks.length === 0) {
+            return {
+                overall_risk: 'safe',
+                suspicious_chunks: [],
+                total_chunks_analyzed: 0,
+                summary: 'No text content found to analyze'
+            };
+        }
+
+        console.log('CatchThePhish: Starting text analysis with retry logic for', rawTextChunks.length, 'chunks');
+
+        // Convert to backend format: List[Dict[str, str]]
+        const formattedChunks = rawTextChunks.map(chunk => ({
+            id: chunk.id,
+            text: chunk.text
+        }));
+
+        for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
+            try {
+                console.log(`🔄 CatchThePhish: Text analysis attempt ${attempt}/${maxRetries + 1}`);
+                
+                const startTime = Date.now();
+                
+                // Send to backend for analysis
+                const response = await fetch('http://localhost:8000/text-analysis/analyze-page-text', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        chunks: formattedChunks
+                    }),
+                    // Add timeout to detect slow responses
+                    signal: AbortSignal.timeout(15000) // 15 second timeout
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error(`CatchThePhish: Backend response error (attempt ${attempt}):`, response.status, errorText);
+                    throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
+                }
+
+                const result = await response.json();
+                const duration = Date.now() - startTime;
+                
+                console.log(`✅ CatchThePhish: Text analysis succeeded on attempt ${attempt} (${duration}ms)`);
+                console.log('CatchThePhish: Text analysis result:', result);
+
+                // Check if we got meaningful results or if models were still "waking up"
+                if (this.isTextAnalysisResultValid(result)) {
+                    return result;
+                } else if (attempt <= maxRetries) {
+                    console.warn(`⚠️ CatchThePhish: Text analysis returned weak results on attempt ${attempt}, retrying...`);
+                    console.log(`⏱️ CatchThePhish: Waiting ${retryDelay}ms before retry to allow models to warm up`);
+                    await this.delay(retryDelay);
+                    continue;
+                } else {
+                    console.warn('⚠️ CatchThePhish: Final attempt returned weak results, using anyway');
+                    return result;
+                }
+
+            } catch (error) {
+                console.error(`CatchThePhish: Text analysis attempt ${attempt} failed:`, error);
+                
+                if (attempt <= maxRetries) {
+                    if (error.name === 'TimeoutError' || error.message.includes('timeout')) {
+                        console.log(`⏱️ CatchThePhish: Timeout on attempt ${attempt}, models may be warming up. Waiting ${retryDelay}ms...`);
+                    } else {
+                        console.log(`🔄 CatchThePhish: Retrying after error on attempt ${attempt}. Waiting ${retryDelay}ms...`);
+                    }
+                    await this.delay(retryDelay);
+                    // Increase delay for subsequent retries to give models more time
+                    retryDelay *= 1.5;
+                } else {
+                    console.error('💥 CatchThePhish: All text analysis attempts failed');
+                    return {
+                        overall_risk: 'error',
+                        suspicious_chunks: [],
+                        total_chunks_analyzed: formattedChunks.length,
+                        summary: `Text analysis failed after ${maxRetries + 1} attempts - models may be warming up`,
+                        retry_info: {
+                            attempts_made: attempt,
+                            final_error: error.message
+                        }
+                    };
+                }
+            }
+        }
+    }
+
+    isTextAnalysisResultValid(result) {
+        // Check if the analysis result indicates the models were working properly
+        // Look for signs that models were "awake" and providing meaningful analysis
+        
+        if (!result || typeof result !== 'object') {
+            return false;
+        }
+
+        // If we have suspicious chunks detected, the models were definitely working
+        if (result.suspicious_chunks && result.suspicious_chunks.length > 0) {
+            console.log('✅ CatchThePhish: Valid result - found suspicious chunks');
+            return true;
+        }
+
+        // If we analyzed chunks and got a clear risk assessment, that's good
+        if (result.total_chunks_analyzed > 0 && result.overall_risk && 
+            ['safe', 'suspicious', 'dangerous'].includes(result.overall_risk)) {
+            console.log('✅ CatchThePhish: Valid result - got clear risk assessment');
+            return true;
+        }
+
+        // If the summary indicates successful analysis, accept it
+        if (result.summary && !result.summary.includes('failed') && !result.summary.includes('error')) {
+            console.log('✅ CatchThePhish: Valid result - summary indicates success');
+            return true;
+        }
+
+        console.log('⚠️ CatchThePhish: Potentially weak result - may need retry');
+        return false;
+    }
+
+    delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
 
     // Encode reasons to short codes to reduce payload

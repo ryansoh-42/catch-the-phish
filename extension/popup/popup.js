@@ -186,6 +186,85 @@ function showThreatDetails(threats) {
     threatDetails.style.display = 'block';
 }
 
+function showComprehensiveThreats(threats, result) {
+    const threatDetails = document.getElementById('threatDetails');
+    const threatList = document.getElementById('threatList');
+    
+    if (!threatDetails || !threatList) return;
+    
+    threatList.innerHTML = '';
+    
+    // Add summary header
+    const summaryHeader = document.createElement('div');
+    summaryHeader.className = 'threat-summary';
+    summaryHeader.innerHTML = `
+        <strong>🔍 Scan Results:</strong> 
+        ${result.overall_assessment.primary_concern}
+    `;
+    threatList.appendChild(summaryHeader);
+    
+    // Group threats by type
+    const urlThreats = threats.filter(t => t.type === 'url');
+    const textThreats = threats.filter(t => t.type === 'text');
+    const infoThreats = threats.filter(t => t.type === 'info');
+    
+    // Show URL threats
+    if (urlThreats.length > 0) {
+        const urlHeader = document.createElement('div');
+        urlHeader.className = 'threat-category';
+        urlHeader.innerHTML = '<strong>🌐 URL Issues:</strong>';
+        threatList.appendChild(urlHeader);
+        
+        urlThreats.forEach(threat => {
+            const threatItem = document.createElement('div');
+            threatItem.className = 'threat-item url-threat';
+            threatItem.innerHTML = `
+                <div class="threat-url">${threat.url}</div>
+                <div class="threat-reason">${threat.threat.reason}</div>
+            `;
+            threatList.appendChild(threatItem);
+        });
+    }
+    
+    // Show text threats
+    if (textThreats.length > 0) {
+        const textHeader = document.createElement('div');
+        textHeader.className = 'threat-category';
+        textHeader.innerHTML = '<strong>📝 Suspicious Content:</strong>';
+        threatList.appendChild(textHeader);
+        
+        textThreats.forEach(threat => {
+            const threatItem = document.createElement('div');
+            threatItem.className = 'threat-item text-threat';
+            threatItem.innerHTML = `
+                <div class="threat-text">${threat.url}</div>
+                <div class="threat-reason">${threat.threat.reason}</div>
+            `;
+            threatList.appendChild(threatItem);
+        });
+    }
+    
+    // Show info messages
+    if (infoThreats.length > 0) {
+        const infoHeader = document.createElement('div');
+        infoHeader.className = 'threat-category';
+        infoHeader.innerHTML = '<strong>ℹ️ Analysis Information:</strong>';
+        threatList.appendChild(infoHeader);
+        
+        infoThreats.forEach(threat => {
+            const threatItem = document.createElement('div');
+            threatItem.className = 'threat-item info-threat';
+            threatItem.innerHTML = `
+                <div class="threat-text">${threat.url}</div>
+                <div class="threat-reason">${threat.threat.reason}</div>
+            `;
+            threatList.appendChild(threatItem);
+        });
+    }
+    
+    threatDetails.style.display = 'block';
+}
+
 async function loadSettings() {
     try {
         const result = await chrome.storage.sync.get(['enableProtection']);
@@ -312,24 +391,97 @@ function setupEventListeners() {
     }
 }
 
-// Add new function to handle comprehensive scan results
+// Updated function to handle comprehensive scan results with text analysis
 function updateScanResults(result) {
-    console.log('CatchThePhish: Updating scan results:', result);
+    console.log('CatchThePhish: Updating comprehensive scan results:', result);
     
-    // Update stats if available
-    if (result.links_scanned !== undefined) {
-        const statsText = document.querySelector('.page-text');
-        if (statsText && result.scan_summary) {
-            // Show scan summary in the status
-            statsText.textContent = result.scan_summary;
+    const statusElement = document.getElementById('pageStatus');
+    const pageText = statusElement?.querySelector('.page-text');
+    const threatDetails = document.getElementById('threatDetails');
+    
+    if (result.success && result.overall_assessment) {
+        // Update main status with scan summary
+        if (pageText) {
+            pageText.textContent = result.scan_summary;
         }
-    }
-    
-    // Show threat details if suspicious links found
-    if (result.suspicious_links_found > 0 && result.suspicious_links) {
-        showThreatDetails(result.suspicious_links.map(link => ({
-            url: link.url,
-            threat: { reason: link.reason }
-        })));
+        
+        // Update status styling based on risk level
+        if (statusElement) {
+            const riskLevel = result.overall_assessment.risk_level;
+            switch (riskLevel) {
+                case 'high':
+                    statusElement.style.background = '#ffebee';
+                    pageText.style.color = '#c62828';
+                    pageText.style.fontWeight = 'bold';
+                    break;
+                case 'medium':
+                    statusElement.style.background = '#fff3cd';
+                    pageText.style.color = '#856404';
+                    pageText.style.fontWeight = 'bold';
+                    break;
+                case 'low':
+                    statusElement.style.background = '#e8f5e8';
+                    pageText.style.color = '#2e7d32';
+                    pageText.style.fontWeight = 'normal';
+                    break;
+            }
+        }
+        
+        // Show detailed threat information
+        const threats = [];
+        
+        // Add URL threats if any
+        if (result.url_analysis?.isSuspicious) {
+            threats.push({
+                type: 'url',
+                url: result.url_analysis.reason,
+                threat: { reason: `URL: ${result.url_analysis.reason}` }
+            });
+        }
+        
+        // Add text threats if any
+        if (result.text_analysis?.suspicious_chunks?.length > 0) {
+            result.text_analysis.suspicious_chunks.forEach(chunk => {
+                const truncatedText = chunk.text.length > 100 ? 
+                    chunk.text.substring(0, 100) + '...' : chunk.text;
+                
+                threats.push({
+                    type: 'text',
+                    url: `"${truncatedText}"`,
+                    threat: { reason: `Content: ${chunk.reasons.join(', ')}` }
+                });
+            });
+        }
+        
+        // Add retry information if available
+        if (result.text_analysis?.retry_info) {
+            const retryInfo = result.text_analysis.retry_info;
+            threats.push({
+                type: 'info',
+                url: '🔄 Analysis Info',
+                threat: { 
+                    reason: `Text analysis completed after ${retryInfo.attempts_made} attempts (models warming up)` 
+                }
+            });
+        }
+        
+        if (threats.length > 0) {
+            showComprehensiveThreats(threats, result);
+        }
+    } else {
+        // Handle legacy format for backward compatibility
+        if (result.links_scanned !== undefined) {
+            const statsText = document.querySelector('.page-text');
+            if (statsText && result.scan_summary) {
+                statsText.textContent = result.scan_summary;
+            }
+        }
+        
+        if (result.suspicious_links_found > 0 && result.suspicious_links) {
+            showThreatDetails(result.suspicious_links.map(link => ({
+                url: link.url,
+                threat: { reason: link.reason }
+            })));
+        }
     }
 }
