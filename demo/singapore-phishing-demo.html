@@ -342,8 +342,16 @@
             }, 1000);
         }
 
+        let alertShown = false;
         function showPhishingAlert() {
+            if (alertShown) return;
+
+            alertShown = true;
             alert('🚨 DEMO ALERT: This would be where a real phishing site would steal your information!\n\nNEVER enter your real SingPass credentials on suspicious websites!\n\nYour extension should have detected this as a phishing attempt.');
+            
+            setTimeout(() => {
+                alertShown = false;
+            }, 1000)
         }
 
         function showSuspiciousPopup() {
@@ -367,7 +375,7 @@
                     suspiciousDiv.className = 'suspicious-text';
                     suspiciousDiv.style.margin = '2rem 0';
                     suspiciousDiv.innerHTML = '<p><strong>🔥 BREAKING:</strong> New data breach affects 50,000 SingPass accounts. Verify your account security immediately to check if you\'re affected!</p>';
-                    container.insertBefore(suspiciousDiv, footer);
+                    container.appendChild(suspiciousDiv);
                 }
             }, 15000);
         }

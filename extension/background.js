@@ -704,6 +704,7 @@ class BackgroundService {
             /verify-/i,
             /update-/i,
             /alert-/i,
+            /suspicious/i,
             /-gov\./i,  // like fake-gov.sg
             /-bank\./i, // like fake-bank.sg
             /-secure\./i
