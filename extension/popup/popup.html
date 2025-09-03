@@ -52,6 +52,10 @@
                 <span class="btn-icon">🚨</span>
                 Report Suspicious Website
             </button>
+            <button class="btn-action btn-history" id="viewPastAnalysis">
+                <span class="btn-icon">📊</span>
+                View Past Analysis
+            </button>
         </div>
 
         <!-- Daily Tip -->
@@ -63,11 +67,11 @@
         <!-- Simple Toggle -->
         <div class="settings-section">
             <div class="setting-item">
+                <span class="setting-label">Enable Protection</span>
                 <label class="toggle">
                     <input type="checkbox" id="enableProtection" checked>
                     <span class="toggle-slider"></span>
                 </label>
-                <span class="setting-label">Enable Protection</span>
             </div>
         </div>
 
@@ -77,7 +81,95 @@
         </div>
     </div>
 
+    <!-- Past Analysis Modal -->
+    <div class="modal-overlay" id="pastAnalysisModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📊 Past Analysis History</h2>
+                <button class="modal-close" id="closePastAnalysis">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="analysis-stats" id="analysisStats">
+                    <div class="stat-row">
+                        <span class="stat-label">Total Domains Scanned:</span>
+                        <span class="stat-value" id="totalDomains">-</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Total Scans Performed:</span>
+                        <span class="stat-value" id="totalScans">-</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Threats Detected:</span>
+                        <span class="stat-value" id="threatsDetected">-</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Storage Used:</span>
+                        <span class="stat-value" id="storageUsed">-</span>
+                    </div>
+                </div>
+                
+                <div class="analysis-history">
+                    <h3>Recent Scan History</h3>
+                    <div class="history-filter">
+                        <select id="historyFilter">
+                            <option value="all">All Results</option>
+                            <option value="suspicious">Suspicious Only</option>
+                            <option value="safe">Safe Only</option>
+                            <option value="recent">Last 24 Hours</option>
+                        </select>
+                        <button class="btn-small" id="clearHistory">Clear All History</button>
+                    </div>
+                    <div class="history-list" id="historyList">
+                        <div class="loading">Loading past analysis...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scan Detail Modal -->
+    <div class="modal-overlay" id="scanDetailModal" style="display: none;">
+        <div class="modal-content detail-modal">
+            <div class="modal-header">
+                <h2 id="detailModalTitle">📊 Scan Details</h2>
+                <button class="modal-close" id="closeScanDetail">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="scan-overview" id="scanOverview">
+                    <!-- Scan overview info will be populated here -->
+                </div>
+                
+                <div class="scan-sections">
+                    <!-- URL Analysis Section -->
+                    <div class="scan-section" id="urlAnalysisSection">
+                        <h3>🌐 URL Analysis</h3>
+                        <div class="section-content" id="urlAnalysisContent">
+                            <!-- URL analysis details -->
+                        </div>
+                    </div>
+
+                    <!-- Text Analysis Section -->
+                    <div class="scan-section" id="textAnalysisSection">
+                        <h3>📝 Text Analysis</h3>
+                        <div class="section-content" id="textAnalysisContent">
+                            <!-- Text analysis details -->
+                        </div>
+                    </div>
+
+                    <!-- Scan History Section -->
+                    <div class="scan-section" id="scanHistorySection">
+                        <h3>📈 Scan History</h3>
+                        <div class="section-content" id="scanHistoryContent">
+                            <!-- Scan history details -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="../utils/config.js"></script>
     <script src="popup.js"></script>
+    <script src="past_analysis.js"></script>
 </body>
 </html>

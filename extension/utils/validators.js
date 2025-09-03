@@ -60,7 +60,7 @@ class InputValidator {
         
         // Use valid actions from config
         const validActions = (typeof CONFIG !== 'undefined' && CONFIG?.VALIDATION?.VALID_ACTIONS)
-            || ['checkURL', 'reportPhishing', 'getStats'];
+            || ['checkURL', 'reportPhishing', 'getStats', 'getAllPastScans', 'getCachedScan', 'getScanStatistics'];
         return validActions.includes(message.action);
     }
 }

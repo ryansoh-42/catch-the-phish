@@ -80,15 +80,53 @@ async function checkCurrentPage() {
         console.log('CatchThePhish: Current tab:', tab); // Debug log
         
         if (tab?.url && tab?.id) {
+            // First check for real-time page state
             const response = await chrome.runtime.sendMessage({
                 action: 'getPageStatus',
                 tabId: tab.id,
                 url: tab.url
             });
-            updatePageStatus(response, tab); // Make sure tab is passed
+            
+            // If page needs scanning, check for cached results
+            if (response.needsScan) {
+                try {
+                    console.log('CatchThePhish: Checking for cached scan results...');
+                    const cachedResponse = await chrome.runtime.sendMessage({
+                        action: 'getCachedScan',
+                        url: tab.url
+                    });
+                    
+                    if (cachedResponse.found) {
+                        console.log('CatchThePhish: Found cached scan result:', cachedResponse);
+                        const timeAgo = formatTimeAgo(cachedResponse.timestamp);
+                        
+                        updatePageStatus({
+                            status: 'cached_result',
+                            message: cachedResponse.isStale 
+                                ? `Last scanned ${timeAgo} (may be outdated)`
+                                : `Last scanned ${timeAgo}`,
+                            icon: cachedResponse.was_suspicious ? '⚠️' : '✅',
+                            cached: true,
+                            isStale: cachedResponse.isStale,
+                            needsScan: cachedResponse.isStale,
+                            cachedResult: cachedResponse.result
+                        }, tab);
+                        
+                        // Show cached results if suspicious
+                        if (cachedResponse.was_suspicious && cachedResponse.result) {
+                            showCachedThreatDetails(cachedResponse.result);
+                        }
+                        
+                        return;
+                    }
+                } catch (cacheError) {
+                    console.warn('CatchThePhish: Error checking cached results:', cacheError);
+                }
+            }
+            
+            updatePageStatus(response, tab);
         } else {
             console.error('CatchThePhish: No valid tab found');
-            // Set default state but still set tab data
             updatePageStatus({
                 status: 'needs_scan',
                 message: 'Click to scan this website',
@@ -148,6 +186,22 @@ function updatePageStatus(status, tab = null) {
             pageText.style.fontWeight = 'normal';
             scanButton.textContent = 'Scan Again';
             scanButton.style.background = '#28a745';
+            break;
+            
+        case 'cached_result':
+            if (status.isStale) {
+                statusElement.style.background = '#fff3cd';
+                pageText.style.color = '#856404';
+                pageText.style.fontWeight = 'normal';
+                scanButton.textContent = 'Scan Again (Recommended)';
+                scanButton.style.background = '#ffc107';
+            } else {
+                statusElement.style.background = status.cachedResult?.overall_assessment?.is_suspicious ? '#ffebee' : '#e8f5e8';
+                pageText.style.color = status.cachedResult?.overall_assessment?.is_suspicious ? '#c62828' : '#2e7d32';
+                pageText.style.fontWeight = 'normal';
+                scanButton.textContent = 'Scan Again';
+                scanButton.style.background = status.cachedResult?.overall_assessment?.is_suspicious ? '#dc3545' : '#28a745';
+            }
             break;
             
         case 'needs_scan':
@@ -389,6 +443,50 @@ function setupEventListeners() {
             }
         });
     }
+
+    // View Past Analysis button
+    const viewPastAnalysisButton = document.getElementById('viewPastAnalysis');
+    if (viewPastAnalysisButton) {
+        viewPastAnalysisButton.addEventListener('click', async () => {
+            await showPastAnalysisModal();
+        });
+    }
+
+    // Past Analysis Modal handlers
+    const closePastAnalysisButton = document.getElementById('closePastAnalysis');
+    if (closePastAnalysisButton) {
+        closePastAnalysisButton.addEventListener('click', () => {
+            hidePastAnalysisModal();
+        });
+    }
+
+    // History filter
+    const historyFilter = document.getElementById('historyFilter');
+    if (historyFilter) {
+        historyFilter.addEventListener('change', async (e) => {
+            await loadPastAnalysisHistory(e.target.value);
+        });
+    }
+
+    // Clear history button
+    const clearHistoryButton = document.getElementById('clearHistory');
+    if (clearHistoryButton) {
+        clearHistoryButton.addEventListener('click', async () => {
+            if (confirm('Are you sure you want to clear all scan history? This cannot be undone.')) {
+                await clearScanHistory();
+            }
+        });
+    }
+
+    // Close modal when clicking outside
+    const pastAnalysisModal = document.getElementById('pastAnalysisModal');
+    if (pastAnalysisModal) {
+        pastAnalysisModal.addEventListener('click', (e) => {
+            if (e.target === pastAnalysisModal) {
+                hidePastAnalysisModal();
+            }
+        });
+    }
 }
 
 // Updated function to handle comprehensive scan results with text analysis
@@ -484,4 +582,93 @@ function updateScanResults(result) {
             })));
         }
     }
+}
+
+/**
+ * Format timestamp as "X minutes/hours/days ago"
+ */
+function formatTimeAgo(timestamp) {
+    const now = Date.now();
+    const diff = now - timestamp;
+    
+    const minutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    
+    if (minutes < 1) return 'just now';
+    if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+    if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    return `${days} day${days > 1 ? 's' : ''} ago`;
+}
+
+/**
+ * Show cached threat details
+ */
+function showCachedThreatDetails(cachedResult) {
+    if (!cachedResult) return;
+    
+    const threatDetails = document.getElementById('threatDetails');
+    const threatList = document.getElementById('threatList');
+    
+    if (!threatDetails || !threatList) return;
+    
+    threatList.innerHTML = '';
+    
+    // Add cache indicator
+    const cacheIndicator = document.createElement('div');
+    cacheIndicator.className = 'cache-indicator';
+    cacheIndicator.innerHTML = '<em>📋 Showing cached results</em>';
+    cacheIndicator.style.cssText = 'color: #666; font-size: 12px; margin-bottom: 10px; padding: 5px; background: #f0f0f0; border-radius: 3px;';
+    threatList.appendChild(cacheIndicator);
+    
+    // Show overall assessment
+    if (cachedResult.overall_assessment) {
+        const assessment = cachedResult.overall_assessment;
+        const summaryHeader = document.createElement('div');
+        summaryHeader.className = 'threat-summary';
+        summaryHeader.innerHTML = `
+            <strong>🔍 Previous Scan Results:</strong> 
+            ${assessment.primary_concern}
+        `;
+        threatList.appendChild(summaryHeader);
+    }
+    
+    // Show URL analysis if suspicious
+    if (cachedResult.url_analysis?.isSuspicious) {
+        const urlHeader = document.createElement('div');
+        urlHeader.className = 'threat-category';
+        urlHeader.innerHTML = '<strong>🌐 URL Issues Found:</strong>';
+        threatList.appendChild(urlHeader);
+        
+        const urlItem = document.createElement('div');
+        urlItem.className = 'threat-item url-threat';
+        urlItem.innerHTML = `
+            <div class="threat-reason">${cachedResult.url_analysis.reason}</div>
+            <div class="threat-detail">Links scanned: ${cachedResult.url_analysis.links_scanned || 'Unknown'}</div>
+        `;
+        threatList.appendChild(urlItem);
+    }
+    
+    // Show text analysis if suspicious
+    if (cachedResult.text_analysis?.suspicious_chunks?.length > 0) {
+        const textHeader = document.createElement('div');
+        textHeader.className = 'threat-category';
+        textHeader.innerHTML = '<strong>📝 Suspicious Content Found:</strong>';
+        threatList.appendChild(textHeader);
+        
+        cachedResult.text_analysis.suspicious_chunks.slice(0, 3).forEach(chunk => {
+            const textItem = document.createElement('div');
+            textItem.className = 'threat-item text-threat';
+            const truncatedText = chunk.text?.length > 50 ? 
+                chunk.text.substring(0, 50) + '...' : chunk.text;
+            
+            textItem.innerHTML = `
+                <div class="threat-text">"${truncatedText}"</div>
+                <div class="threat-reason">${chunk.reasons?.join(', ') || 'Suspicious content detected'}</div>
+            `;
+            threatList.appendChild(textItem);
+        });
+    }
+    
+    threatDetails.style.display = 'block';
 }

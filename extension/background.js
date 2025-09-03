@@ -2,7 +2,7 @@ console.log('CatchThePhish: Background script loaded');
 
 // Import utilities
 try {
-    importScripts('utils/config.js', 'utils/validators.js', 'utils/cache.js');
+    importScripts('utils/config.js', 'utils/validators.js', 'utils/cache.js', 'utils/scan_storage.js');
     console.log('CatchThePhish: Utilities loaded successfully');
 } catch (error) {
     console.error('CatchThePhish: Error loading utilities:', error);
@@ -15,6 +15,9 @@ class BackgroundService {
             ttl: CONFIG?.CACHE?.TTL || 10 * 60 * 1000,
             cleanupInterval: CONFIG?.CACHE?.CLEANUP_INTERVAL || 2 * 60 * 1000
         });
+        
+        // Initialize persistent scan storage
+        this.scanStorage = new ScanStorageService();
         
         // Simple telemetry tracking
         this.stats = {
@@ -103,6 +106,22 @@ class BackgroundService {
                         });
                     }
                     break;
+
+                case 'getCachedScan':
+                    this.handleGetCachedScan(request, sendResponse);
+                    return; // Async response
+
+                case 'getScanStatistics':
+                    this.handleGetScanStatistics(sendResponse);
+                    return; // Async response
+
+                case 'getAllPastScans':
+                    this.handleGetAllPastScans(request, sendResponse);
+                    return; // Async response
+
+                case 'clearScanHistory':
+                    this.handleClearScanHistory(sendResponse);
+                    return; // Async response
 
                 case 'scanCurrentPage':
                     // Handle this asynchronously with text analysis
@@ -330,13 +349,21 @@ class BackgroundService {
                 this.stats.threatsBlocked++;
             }
 
-            // 5. Store scan result
+            // 5. Store scan result in memory and persistent storage
             this.pageStates.set(request.tabId, {
                 url: request.url,
                 result: combinedResult,
                 scanned: true,
                 timestamp: Date.now()
             });
+
+            // 6. Save to persistent storage
+            try {
+                await this.scanStorage.saveScanResult(request.url, combinedResult);
+                console.log('✅ CatchThePhish: Scan result saved to persistent storage');
+            } catch (storageError) {
+                console.warn('⚠️ CatchThePhish: Failed to save to persistent storage:', storageError);
+            }
 
             console.log('📤 CatchThePhish: Sending comprehensive scan result:', combinedResult);
             sendResponse(combinedResult);
@@ -1559,6 +1586,170 @@ class BackgroundService {
         } catch (error) {
             console.error('Backend comprehensive scan failed:', error);
             throw error;
+        }
+    }
+
+    /**
+     * Handle getCachedScan message
+     */
+    async handleGetCachedScan(request, sendResponse) {
+        try {
+            if (!request.url) {
+                sendResponse({ found: false, error: 'No URL provided' });
+                return;
+            }
+
+            const cachedScan = await this.scanStorage.getLatestScan(request.url);
+            
+            if (!cachedScan) {
+                sendResponse({ found: false });
+                return;
+            }
+
+            // Check if we should warn about stale data
+            const isStale = !cachedScan.isValid;
+            
+            sendResponse({
+                found: true,
+                timestamp: cachedScan.timestamp,
+                was_suspicious: cachedScan.result?.overall_assessment?.is_suspicious || false,
+                confidence: cachedScan.result?.overall_assessment?.confidence || 0,
+                scan_summary: cachedScan.result?.scan_summary || 'Previous scan completed',
+                isStale: isStale,
+                result: cachedScan.result,
+                scanHistory: cachedScan.scanHistory
+            });
+
+        } catch (error) {
+            console.error('CatchThePhish: Error getting cached scan:', error);
+            sendResponse({ found: false, error: error.message });
+        }
+    }
+
+    /**
+     * Handle getScanStatistics message
+     */
+    async handleGetScanStatistics(sendResponse) {
+        try {
+            const stats = await this.scanStorage.getScanStatistics();
+            sendResponse(stats);
+        } catch (error) {
+            console.error('CatchThePhish: Error getting scan statistics:', error);
+            sendResponse({
+                totalDomains: 0,
+                totalScans: 0,
+                suspiciousFound: 0,
+                recentScans: 0,
+                storageUsed: 0,
+                error: error.message
+            });
+        }
+    }
+
+    /**
+     * Enhanced getPageStatus that considers cached scans
+     */
+    async getPageStatusWithCache(tabId, pageUrl) {
+        // First check current page state (real-time and manual scans)
+        const currentStatus = this.getPageStatus(tabId, pageUrl);
+        
+        // If page needs scanning, check for cached results
+        if (currentStatus.needsScan) {
+            try {
+                const cachedScan = await this.scanStorage.getLatestScan(pageUrl);
+                
+                if (cachedScan) {
+                    const timeAgo = this.formatTimeAgo(cachedScan.timestamp);
+                    const isStale = !cachedScan.isValid;
+                    
+                    return {
+                        status: 'cached_result',
+                        message: isStale 
+                            ? `Last scanned ${timeAgo} (may be outdated)`
+                            : `Last scanned ${timeAgo}`,
+                        icon: cachedScan.result?.overall_assessment?.is_suspicious ? '⚠️' : '✅',
+                        cached: true,
+                        isStale: isStale,
+                        cachedResult: cachedScan.result,
+                        needsScan: isStale // Suggest re-scan if stale
+                    };
+                }
+            } catch (error) {
+                console.error('CatchThePhish: Error checking cached scan:', error);
+            }
+        }
+        
+        return currentStatus;
+    }
+
+    /**
+     * Format timestamp as "X minutes/hours/days ago"
+     */
+    formatTimeAgo(timestamp) {
+        const now = Date.now();
+        const diff = now - timestamp;
+        
+        const minutes = Math.floor(diff / (1000 * 60));
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        
+        if (minutes < 1) return 'just now';
+        if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+        if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+        return `${days} day${days > 1 ? 's' : ''} ago`;
+    }
+
+    /**
+     * Handle getAllPastScans message
+     */
+    async handleGetAllPastScans(request, sendResponse) {
+        try {
+            const filter = request.filter || 'all';
+            const pastScans = await this.scanStorage.getAllPastScans(filter);
+            
+            sendResponse({
+                success: true,
+                scans: pastScans,
+                count: pastScans.length
+            });
+
+        } catch (error) {
+            console.error('CatchThePhish: Error getting past scans:', error);
+            sendResponse({
+                success: false,
+                error: error.message,
+                scans: [],
+                count: 0
+            });
+        }
+    }
+
+    /**
+     * Handle clearScanHistory message
+     */
+    async handleClearScanHistory(sendResponse) {
+        try {
+            const success = await this.scanStorage.clearAllData();
+            
+            if (success) {
+                console.log('CatchThePhish: Scan history cleared successfully');
+                sendResponse({
+                    success: true,
+                    message: 'All scan history has been cleared'
+                });
+            } else {
+                sendResponse({
+                    success: false,
+                    error: 'Failed to clear scan history'
+                });
+            }
+
+        } catch (error) {
+            console.error('CatchThePhish: Error clearing scan history:', error);
+            sendResponse({
+                success: false,
+                error: error.message
+            });
         }
     }
 }
