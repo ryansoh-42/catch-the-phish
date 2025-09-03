@@ -1589,9 +1589,6 @@ class BackgroundService {
         }
     }
 
-    /**
-     * Handle getCachedScan message
-     */
     async handleGetCachedScan(request, sendResponse) {
         try {
             if (!request.url) {
@@ -1626,9 +1623,6 @@ class BackgroundService {
         }
     }
 
-    /**
-     * Handle getScanStatistics message
-     */
     async handleGetScanStatistics(sendResponse) {
         try {
             const stats = await this.scanStorage.getScanStatistics();
@@ -1646,9 +1640,6 @@ class BackgroundService {
         }
     }
 
-    /**
-     * Enhanced getPageStatus that considers cached scans
-     */
     async getPageStatusWithCache(tabId, pageUrl) {
         // First check current page state (real-time and manual scans)
         const currentStatus = this.getPageStatus(tabId, pageUrl);
@@ -1682,9 +1673,6 @@ class BackgroundService {
         return currentStatus;
     }
 
-    /**
-     * Format timestamp as "X minutes/hours/days ago"
-     */
     formatTimeAgo(timestamp) {
         const now = Date.now();
         const diff = now - timestamp;
@@ -1699,9 +1687,6 @@ class BackgroundService {
         return `${days} day${days > 1 ? 's' : ''} ago`;
     }
 
-    /**
-     * Handle getAllPastScans message
-     */
     async handleGetAllPastScans(request, sendResponse) {
         try {
             const filter = request.filter || 'all';
@@ -1724,9 +1709,6 @@ class BackgroundService {
         }
     }
 
-    /**
-     * Handle clearScanHistory message
-     */
     async handleClearScanHistory(sendResponse) {
         try {
             const success = await this.scanStorage.clearAllData();

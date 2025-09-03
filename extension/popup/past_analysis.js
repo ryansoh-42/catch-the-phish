@@ -1,10 +1,3 @@
-/**
- * Past Analysis Modal Functions for CatchThePhish Extension
- */
-
-/**
- * Show the past analysis modal
- */
 async function showPastAnalysisModal() {
     const modal = document.getElementById('pastAnalysisModal');
     if (!modal) return;
@@ -16,9 +9,6 @@ async function showPastAnalysisModal() {
     await loadPastAnalysisHistory('all');
 }
 
-/**
- * Hide the past analysis modal
- */
 function hidePastAnalysisModal() {
     const modal = document.getElementById('pastAnalysisModal');
     if (modal) {
@@ -26,9 +16,6 @@ function hidePastAnalysisModal() {
     }
 }
 
-/**
- * Load and display past analysis statistics
- */
 async function loadPastAnalysisStats() {
     try {
         const response = await chrome.runtime.sendMessage({
@@ -59,9 +46,6 @@ async function loadPastAnalysisStats() {
     }
 }
 
-/**
- * Load and display past analysis history
- */
 async function loadPastAnalysisHistory(filter = 'all') {
     const historyList = document.getElementById('historyList');
     if (!historyList) return;
@@ -87,9 +71,6 @@ async function loadPastAnalysisHistory(filter = 'all') {
     }
 }
 
-/**
- * Display the past analysis history
- */
 function displayPastAnalysisHistory(scans) {
     const historyList = document.getElementById('historyList');
     if (!historyList) return;
@@ -113,9 +94,6 @@ function displayPastAnalysisHistory(scans) {
     });
 }
 
-/**
- * Create a history item element
- */
 function createHistoryItem(scan) {
     const item = document.createElement('div');
     const isSuspicious = scan.result?.overall_assessment?.is_suspicious || scan.result?.isSuspicious;
@@ -172,9 +150,6 @@ function createHistoryItem(scan) {
     return item;
 }
 
-/**
- * Show detailed scan information in modal
- */
 function showScanDetails(scan) {
     const modal = document.getElementById('scanDetailModal');
     if (!modal) return;
@@ -189,9 +164,6 @@ function showScanDetails(scan) {
     setupScanDetailModalHandlers();
 }
 
-/**
- * Populate the scan detail modal with data
- */
 function populateScanDetailModal(scan) {
     const isSuspicious = scan.result?.overall_assessment?.is_suspicious || scan.result?.isSuspicious;
     const result = scan.result;
@@ -212,9 +184,6 @@ function populateScanDetailModal(scan) {
     populateScanHistorySection(scan.scanHistory || []);
 }
 
-/**
- * Populate overview section
- */
 function populateOverviewSection(scan, isSuspicious) {
     const overviewContainer = document.getElementById('scanOverview');
     const confidence = scan.result?.overall_assessment?.confidence || scan.result?.confidence || 0;
@@ -248,9 +217,6 @@ function populateOverviewSection(scan, isSuspicious) {
     `;
 }
 
-/**
- * Populate URL analysis section
- */
 function populateUrlAnalysisSection(urlAnalysis) {
     const urlSection = document.getElementById('urlAnalysisSection');
     const urlContent = document.getElementById('urlAnalysisContent');
@@ -291,9 +257,6 @@ function populateUrlAnalysisSection(urlAnalysis) {
     `;
 }
 
-/**
- * Populate text analysis section
- */
 function populateTextAnalysisSection(textAnalysis) {
     const textSection = document.getElementById('textAnalysisSection');
     const textContent = document.getElementById('textAnalysisContent');
@@ -348,9 +311,6 @@ function populateTextAnalysisSection(textAnalysis) {
     textContent.innerHTML = content;
 }
 
-/**
- * Populate scan history section
- */
 function populateScanHistorySection(scanHistory) {
     const historySection = document.getElementById('scanHistorySection');
     const historyContent = document.getElementById('scanHistoryContent');
@@ -392,9 +352,6 @@ function populateScanHistorySection(scanHistory) {
     historyContent.innerHTML = content;
 }
 
-/**
- * Setup scan detail modal event handlers
- */
 function setupScanDetailModalHandlers() {
     // Close button handler
     const closeButton = document.getElementById('closeScanDetail');
@@ -413,9 +370,6 @@ function setupScanDetailModalHandlers() {
     }
 }
 
-/**
- * Hide the scan detail modal
- */
 function hideScanDetailModal() {
     const modal = document.getElementById('scanDetailModal');
     if (modal) {
@@ -423,9 +377,7 @@ function hideScanDetailModal() {
     }
 }
 
-/**
- * Clear all scan history
- */
+
 async function clearScanHistory() {
     try {
         const response = await chrome.runtime.sendMessage({

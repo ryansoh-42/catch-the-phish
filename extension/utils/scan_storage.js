@@ -1,7 +1,4 @@
-/**
- * Scan Storage Service for CatchThePhish Extension
- * Handles persistent storage of scan results using chrome.storage.local
- */
+
 class ScanStorageService {
     constructor() {
         this.storageKey = 'catchthephish_scan_results';
@@ -85,20 +82,11 @@ class ScanStorageService {
         }
     }
 
-    /**
-     * Check if a cached scan exists and is still valid
-     * @param {string} url - The URL to check
-     * @returns {boolean} - True if valid cached scan exists
-     */
     async hasFreshScan(url) {
         const latestScan = await this.getLatestScan(url);
         return latestScan && latestScan.isValid;
     }
 
-    /**
-     * Get scan statistics across all domains
-     * @returns {object} - Statistics about stored scans
-     */
     async getScanStatistics() {
         try {
             const currentData = await this.getAllScanData();
@@ -138,9 +126,6 @@ class ScanStorageService {
         }
     }
 
-    /**
-     * Clean up old scan data to manage storage space
-     */
     async cleanup() {
         try {
             const currentData = await this.getAllScanData();
@@ -159,10 +144,6 @@ class ScanStorageService {
         }
     }
 
-    /**
-     * Get all scan data from storage
-     * @returns {object} - All stored scan data
-     */
     async getAllScanData() {
         try {
             const result = await chrome.storage.local.get([this.storageKey]);
@@ -173,10 +154,6 @@ class ScanStorageService {
         }
     }
 
-    /**
-     * Save all scan data to storage
-     * @param {object} data - Data to save
-     */
     async saveAllScanData(data) {
         try {
             // Clean old data before saving
@@ -197,11 +174,6 @@ class ScanStorageService {
         }
     }
 
-    /**
-     * Extract domain from URL
-     * @param {string} url - URL to extract domain from
-     * @returns {string} - Extracted domain
-     */
     extractDomain(url) {
         try {
             return new URL(url).hostname.toLowerCase();
@@ -211,12 +183,6 @@ class ScanStorageService {
         }
     }
 
-    /**
-     * Check if a scan is still valid (not too old)
-     * @param {object} scanData - Scan data with timestamp
-     * @param {number} maxAge - Maximum age in milliseconds (optional)
-     * @returns {boolean} - True if scan is still valid
-     */
     isScanStillValid(scanData, maxAge = this.maxAge) {
         if (!scanData || !scanData.timestamp) {
             return false;
@@ -224,11 +190,6 @@ class ScanStorageService {
         return (Date.now() - scanData.timestamp) < maxAge;
     }
 
-    /**
-     * Clean up old data based on retention policy
-     * @param {object} data - Data to clean
-     * @returns {object} - Cleaned data
-     */
     cleanupOldData(data) {
         const cutoffTime = Date.now() - (this.dataRetentionDays * 24 * 60 * 60 * 1000);
         const cleaned = {};
@@ -249,11 +210,6 @@ class ScanStorageService {
         return cleaned;
     }
 
-    /**
-     * Aggressive cleanup when storage is full
-     * @param {object} data - Data to clean aggressively
-     * @returns {object} - Aggressively cleaned data
-     */
     aggressiveCleanup(data) {
         const oneWeekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
         const cleaned = {};
@@ -272,11 +228,6 @@ class ScanStorageService {
         return cleaned;
     }
 
-    /**
-     * Compress scan result to save storage space
-     * @param {object} result - Full scan result
-     * @returns {object} - Compressed result
-     */
     compressResult(result) {
         // Keep only essential data for storage
         return {
@@ -299,10 +250,6 @@ class ScanStorageService {
         };
     }
 
-    /**
-     * Get current storage usage
-     * @returns {number} - Storage usage in bytes
-     */
     async getStorageUsage() {
         try {
             const bytesInUse = await chrome.storage.local.getBytesInUse([this.storageKey]);
@@ -313,11 +260,6 @@ class ScanStorageService {
         }
     }
 
-    /**
-     * Get all stored scans for display in past analysis
-     * @param {string} filter - Filter type: 'all', 'suspicious', 'safe', 'recent'
-     * @returns {Array} - Array of scan history items
-     */
     async getAllPastScans(filter = 'all') {
         try {
             const currentData = await this.getAllScanData();
@@ -372,9 +314,6 @@ class ScanStorageService {
         }
     }
 
-    /**
-     * Clear all stored scan data (for debugging/reset)
-     */
     async clearAllData() {
         try {
             await chrome.storage.local.remove([this.storageKey]);

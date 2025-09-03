@@ -332,14 +332,14 @@ async function loadSettings() {
 }
 
 function setupEventListeners() {
-    // Scan page button - Fixed integration
+    // Scan page button
     const scanButton = document.getElementById('scanPage');
     if (scanButton) {
         console.log('CatchThePhish: Scan button found, adding event listener');
         scanButton.addEventListener('click', async () => {
             console.log('CatchThePhish: Scan button clicked!');
             
-            // Get current tab data fresh (don't rely on dataset)
+            // Get current tab data fresh
             try {
                 const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
                 
@@ -584,9 +584,7 @@ function updateScanResults(result) {
     }
 }
 
-/**
- * Format timestamp as "X minutes/hours/days ago"
- */
+
 function formatTimeAgo(timestamp) {
     const now = Date.now();
     const diff = now - timestamp;
@@ -601,9 +599,7 @@ function formatTimeAgo(timestamp) {
     return `${days} day${days > 1 ? 's' : ''} ago`;
 }
 
-/**
- * Show cached threat details
- */
+
 function showCachedThreatDetails(cachedResult) {
     if (!cachedResult) return;
     
