@@ -234,7 +234,7 @@ Response:
 
 ## Demo Video
 
-[YouTube Link – insert here after recording](https://youtube.com)
+[Ellipsis Tech Series Hackathon 2025 - poopoopeepee](https://youtu.be/mINdOpNS2Ug)
 
 ## Future Development
 
