@@ -415,10 +415,6 @@ function setupEventListeners() {
                 
                 const originalHTML = reportButton.innerHTML;
                 reportButton.innerHTML = '<span class="btn-icon">✅</span>Reported!';
-                
-                setTimeout(() => {
-                    reportButton.innerHTML = originalHTML;
-                }, 2000);
             }
         });
     }
