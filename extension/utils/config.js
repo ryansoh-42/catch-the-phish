@@ -59,10 +59,13 @@ const CONFIG = {
         'citygas.com.sg', 'ema.gov.sg',
         
         // Global (ADD THESE - they were missing!)
-        'google.com', 'facebook.com', 'amazon.com', 'microsoft.com',
-        'apple.com', 'paypal.com', 'instagram.com', 'twitter.com',
-        'linkedin.com', 'netflix.com', 'spotify.com', 'github.com',
-        'youtube.com', 'whatsapp.com', 'telegram.org'
+        'google.com', 'docs.google.com', 'sheets.google.com', 'drive.google.com',
+        'gmail.com', 'mail.google.com', 'maps.google.com', 'translate.google.com',
+        'photos.google.com', 'calendar.google.com', 'meet.google.com',
+        'classroom.google.com', 'sites.google.com', 'forms.google.com',
+        'facebook.com', 'amazon.com', 'microsoft.com', 'apple.com', 'paypal.com', 
+        'instagram.com', 'twitter.com', 'linkedin.com', 'netflix.com', 'spotify.com', 
+        'github.com', 'youtube.com', 'whatsapp.com', 'telegram.org'
     ],
     
     // Combined suspicious patterns (simplified)

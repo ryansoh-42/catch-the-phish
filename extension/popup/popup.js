@@ -498,14 +498,54 @@ function updateScanResults(result) {
     const threatDetails = document.getElementById('threatDetails');
     
     if (result.success && result.overall_assessment) {
+        // CRITICAL FIX: Override scan results for government domains
+        let finalScanSummary = result.scan_summary;
+        let finalOverallAssessment = result.overall_assessment;
+        
+        // Check if this is a government domain that should be overridden
+        const isGovernmentDomain = window.location.href.includes('.gov.sg') || 
+                                 (result.url_analysis?.reason && result.url_analysis.reason.includes('gov.sg'));
+        
+        // IMMEDIATE DEBUG: Log current state
+        console.log('🛡️ CatchThePhish: Government domain check:');
+        console.log('  Current URL:', window.location.href);
+        console.log('  Is government domain:', isGovernmentDomain);
+        console.log('  Text suspicious chunks:', result.text_analysis?.suspicious_chunks?.length || 0);
+        console.log('  Will override:', isGovernmentDomain && result.text_analysis?.suspicious_chunks?.length > 0);
+        
+        if (isGovernmentDomain && result.text_analysis?.suspicious_chunks?.length > 0) {
+            // Override the scan summary and overall assessment for government domains
+            finalScanSummary = '✅ Safe: Trusted government website - scanned ' + 
+                              (result.url_analysis?.links_scanned || 0) + ' URLs and ' + 
+                              (result.text_analysis?.total_chunks_analyzed || 0) + ' text chunks';
+            
+            finalOverallAssessment = {
+                risk_level: 'low',
+                is_suspicious: false,
+                confidence: 0.9,
+                primary_concern: 'No threats detected - trusted government website'
+            };
+            
+            // AGGRESSIVE FIX: Completely replace text analysis results for government domains
+            result.text_analysis = {
+                overall_risk: 'safe',
+                suspicious_chunks: [],
+                total_chunks_analyzed: result.text_analysis?.total_chunks_analyzed || 0,
+                summary: 'Text analysis overridden for trusted government website'
+            };
+            
+            console.log('🛡️ CatchThePhish: Overriding scan results for government domain');
+            console.log('🛡️ CatchThePhish: Replaced text analysis results:', result.text_analysis);
+        }
+        
         // Update main status with scan summary
         if (pageText) {
-            pageText.textContent = result.scan_summary;
+            pageText.textContent = finalScanSummary;
         }
         
         // Update status styling based on risk level
         if (statusElement) {
-            const riskLevel = result.overall_assessment.risk_level;
+            const riskLevel = finalOverallAssessment.risk_level;
             switch (riskLevel) {
                 case 'high':
                     statusElement.style.background = '#ffebee';
@@ -537,8 +577,55 @@ function updateScanResults(result) {
             });
         }
         
-        // Add text threats if any
-        if (result.text_analysis?.suspicious_chunks?.length > 0) {
+        // Add text threats if any (but only if not overridden by trusted government domain)
+        // Check if this is a trusted government domain that should override text analysis
+        const isTrustedGovernmentOverride = finalOverallAssessment?.primary_concern?.includes('trusted government website') ||
+                                          (finalOverallAssessment?.risk_level === 'low' && 
+                                           finalOverallAssessment?.primary_concern?.includes('No threats detected'));
+        
+        // Additional fallback: Check if the current page URL is a trusted government domain
+        let currentPageUrl = '';
+        try {
+            // Try to get current page URL from various sources
+            if (result.url_analysis?.page_url) {
+                currentPageUrl = result.url_analysis.page_url;
+            } else if (window.location) {
+                currentPageUrl = window.location.href;
+            }
+        } catch (e) {
+            console.warn('Could not get current page URL:', e);
+        }
+        
+        // Fallback government domain check
+        const isCurrentPageGovDomain = currentPageUrl && (
+            currentPageUrl.includes('www.gov.sg') || 
+            currentPageUrl.includes('singpass.gov.sg') || 
+            currentPageUrl.includes('cpf.gov.sg') ||
+            currentPageUrl.includes('iras.gov.sg') ||
+            currentPageUrl.includes('.gov.sg')
+        );
+        
+        // CRITICAL FIX: Force override for government domains regardless of backend response
+        const isGovernmentDomainFallback = isCurrentPageGovDomain || 
+                                 (currentPageUrl && currentPageUrl.includes('.gov.sg')) ||
+                                 (result.url_analysis?.reason && result.url_analysis.reason.includes('gov.sg'));
+        
+        const shouldOverrideTextThreats = isTrustedGovernmentOverride || isCurrentPageGovDomain || isGovernmentDomainFallback;
+        
+        // Debug logging
+        console.log('🔍 CatchThePhish: Popup debug:');
+        console.log('  Original overall assessment:', result.overall_assessment);
+        console.log('  Final overall assessment:', finalOverallAssessment);
+        console.log('  Risk level:', finalOverallAssessment?.risk_level);
+        console.log('  Primary concern:', finalOverallAssessment?.primary_concern);
+        console.log('  Is trusted government override:', isTrustedGovernmentOverride);
+        console.log('  Current page URL:', currentPageUrl);
+        console.log('  Is current page gov domain:', isCurrentPageGovDomain);
+        console.log('  Is government domain fallback:', isGovernmentDomainFallback);
+        console.log('  Should override text threats:', shouldOverrideTextThreats);
+        console.log('  Text suspicious chunks:', result.text_analysis?.suspicious_chunks?.length || 0);
+        
+        if (result.text_analysis?.suspicious_chunks?.length > 0 && !shouldOverrideTextThreats) {
             result.text_analysis.suspicious_chunks.forEach(chunk => {
                 const truncatedText = chunk.text.length > 100 ? 
                     chunk.text.substring(0, 100) + '...' : chunk.text;
@@ -559,6 +646,17 @@ function updateScanResults(result) {
                 url: '🔄 Analysis Info',
                 threat: { 
                     reason: `Text analysis completed after ${retryInfo.attempts_made} attempts (models warming up)` 
+                }
+            });
+        }
+        
+        // Add special message for trusted government domains
+        if (shouldOverrideTextThreats && result.text_analysis?.suspicious_chunks?.length > 0) {
+            threats.push({
+                type: 'info',
+                url: '🛡️ Government Website Protection',
+                threat: { 
+                    reason: 'Text analysis flagged content, but this is a trusted government website - content is safe' 
                 }
             });
         }

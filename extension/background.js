@@ -321,6 +321,12 @@ class BackgroundService {
             console.log('📝 CatchThePhish: Text analysis result:', textResult);
             
             // 3. Combine both URL and text results
+            // Ensure the page URL is available for context-aware filtering
+            const urlPageResultWithUrl = {
+                ...urlPageResult,
+                page_url: request.url
+            };
+            
             const combinedResult = {
                 success: true,
                 url_analysis: {
@@ -332,8 +338,8 @@ class BackgroundService {
                     suspicious_links: urlPageResult.suspicious_links || []
                 },
                 text_analysis: textResult,
-                overall_assessment: this.combineUrlAndTextResults(urlPageResult, textResult),
-                scan_summary: this.generateComprehensiveScanSummary(urlPageResult, textResult),
+                overall_assessment: this.combineUrlAndTextResults(urlPageResultWithUrl, textResult),
+                scan_summary: this.generateComprehensiveScanSummary(urlPageResultWithUrl, textResult),
                 timestamp: Date.now()
             };
 
@@ -410,7 +416,18 @@ class BackgroundService {
         const urlSuspicious = urlPageResult.is_suspicious || false;
         const textSuspicious = textResult.overall_risk === 'dangerous' || textResult.overall_risk === 'suspicious';
         
+        // Context-aware filtering: If URL is from a trusted government domain, trust it over text analysis
+        const isTrustedGovernmentDomain = this.isTrustedGovernmentDomain(urlPageResult.page_url || '');
+        
+        // Debug logging
+        console.log('🔍 CatchThePhish: combineUrlAndTextResults debug:');
+        console.log('  URL:', urlPageResult.page_url);
+        console.log('  URL suspicious:', urlSuspicious);
+        console.log('  Text suspicious:', textSuspicious);
+        console.log('  Is trusted government domain:', isTrustedGovernmentDomain);
+        
         if (urlSuspicious && textSuspicious) {
+            console.log('  Result: High risk - both URL and text suspicious');
             return {
                 risk_level: 'high',
                 is_suspicious: true,
@@ -418,20 +435,33 @@ class BackgroundService {
                 primary_concern: `Both URLs and content appear suspicious (${urlPageResult.suspicious_links_found || 0} suspicious links, ${textResult.suspicious_chunks?.length || 0} suspicious text chunks)`
             };
         } else if (urlSuspicious) {
+            console.log('  Result: Medium risk - URL suspicious');
             return {
                 risk_level: 'medium',
                 is_suspicious: true,
                 confidence: urlPageResult.confidence || 0.6,
                 primary_concern: `Suspicious URLs detected (${urlPageResult.suspicious_links_found || 0} suspicious links found)`
             };
-        } else if (textSuspicious) {
+        } else if (textSuspicious && !isTrustedGovernmentDomain) {
+            console.log('  Result: Medium risk - text suspicious, not trusted government domain');
+            // Only flag text as suspicious if it's NOT from a trusted government domain
             return {
                 risk_level: 'medium',
                 is_suspicious: true,
                 confidence: 0.6,
                 primary_concern: `Suspicious content detected (${textResult.suspicious_chunks?.length || 0} suspicious text chunks)`
             };
+        } else if (textSuspicious && isTrustedGovernmentDomain) {
+            console.log('  Result: Low risk - text suspicious but trusted government domain, overriding');
+            // Override text analysis for trusted government domains
+            return {
+                risk_level: 'low',
+                is_suspicious: false,
+                confidence: 0.9,
+                primary_concern: 'No threats detected - trusted government website'
+            };
         } else {
+            console.log('  Result: Low risk - no threats detected');
             return {
                 risk_level: 'low',
                 is_suspicious: false,
@@ -464,12 +494,17 @@ class BackgroundService {
         const chunksAnalyzed = textResult.total_chunks_analyzed || 0;
         const suspiciousChunks = textResult.suspicious_chunks?.length || 0;
         
+        // Context-aware filtering: Check if it's a trusted government domain
+        const isTrustedGovernmentDomain = this.isTrustedGovernmentDomain(urlPageResult.page_url || '');
+        
         if (urlSuspicious && textSuspicious) {
             return `⚠️ High Risk: Found ${suspiciousLinks} suspicious URLs and ${suspiciousChunks} suspicious content blocks`;
         } else if (urlSuspicious) {
             return `⚠️ Medium Risk: Found ${suspiciousLinks} suspicious URLs (scanned ${linksScanned} links total)`;
-        } else if (textSuspicious) {
+        } else if (textSuspicious && !isTrustedGovernmentDomain) {
             return `⚠️ Medium Risk: Found ${suspiciousChunks} suspicious content blocks (analyzed ${chunksAnalyzed} text chunks)`;
+        } else if (textSuspicious && isTrustedGovernmentDomain) {
+            return `✅ Safe: Trusted government website - scanned ${linksScanned} URLs and ${chunksAnalyzed} text chunks`;
         } else {
             return `✅ Safe: Scanned ${linksScanned} URLs and ${chunksAnalyzed} text chunks - no threats detected`;
         }
@@ -705,7 +740,9 @@ class BackgroundService {
             }
             
             // Remove common legitimate subdomains for comparison
-            const legitimateSubdomains = ['www.', 'secure.', 'login.', 'm.', 'mobile.', 'app.', 'api.', 'mail.'];
+            const legitimateSubdomains = ['www.', 'secure.', 'login.', 'm.', 'mobile.', 'app.', 'api.', 'mail.', 
+                                        'docs.', 'sheets.', 'drive.', 'maps.', 'translate.', 'photos.', 
+                                        'calendar.', 'meet.', 'classroom.', 'sites.', 'forms.'];
             for (const subdomain of legitimateSubdomains) {
                 if (normalized.startsWith(subdomain)) {
                     normalized = normalized.substring(subdomain.length);
@@ -734,7 +771,17 @@ class BackgroundService {
             /suspicious/i,
             /-gov\./i,  // like fake-gov.sg
             /-bank\./i, // like fake-bank.sg
-            /-secure\./i
+            /-secure\./i,
+            
+            // Enhanced patterns for fake government subdomains
+            /^fake\.gov\./i,        // fake.gov.sg, fake.gov.com
+            /^phishing\.gov\./i,    // phishing.gov.sg
+            /^scam\.gov\./i,        // scam.gov.sg
+            /^malicious\.gov\./i,   // malicious.gov.sg
+            /^fake-.*\.gov\./i,     // fake-singpass.gov.sg
+            /^phishing-.*\.gov\./i, // phishing-cpf.gov.sg
+            /^scam-.*\.gov\./i,     // scam-iras.gov.sg
+            /^malicious-.*\.gov\./i // malicious-hdb.gov.sg
         ];
         
         for (const pattern of suspiciousSubdomainPatterns) {
@@ -826,7 +873,18 @@ class BackgroundService {
             `mobile.${protectedDomain}`,
             `app.${protectedDomain}`,
             `api.${protectedDomain}`,
-            `mail.${protectedDomain}`
+            `mail.${protectedDomain}`,
+            `docs.${protectedDomain}`,
+            `sheets.${protectedDomain}`,
+            `drive.${protectedDomain}`,
+            `maps.${protectedDomain}`,
+            `translate.${protectedDomain}`,
+            `photos.${protectedDomain}`,
+            `calendar.${protectedDomain}`,
+            `meet.${protectedDomain}`,
+            `classroom.${protectedDomain}`,
+            `sites.${protectedDomain}`,
+            `forms.${protectedDomain}`
         ];
         
         return legitimatePatterns.includes(domain);
@@ -974,7 +1032,7 @@ class BackgroundService {
             'urgent', 'security', 'alert', 'warning', 'blocked', 'expired',
             'confirm', 'activate', 'unlock', 'restore', 'support', 'help',
             'bank', 'payment', 'paypal', 'amazon', 'microsoft', 'apple',
-            'google', 'facebook', 'instagram', 'twitter', 'linkedin'
+            'facebook', 'instagram', 'twitter', 'linkedin'
         ];
         
         // Only flag if domain contains suspicious keywords in suspicious contexts
@@ -1398,6 +1456,34 @@ class BackgroundService {
             return trustedDomains.some(trusted => 
                 domain === trusted || domain.endsWith('.' + trusted)
             );
+        } catch (error) {
+            return false;
+        }
+    }
+
+    // Helper to check if a domain is a trusted government domain (for context-aware filtering)
+    isTrustedGovernmentDomain(url) {
+        try {
+            const domain = new URL(url).hostname.toLowerCase();
+            
+            // Whitelist of EXACT trusted government domains and their legitimate subdomains
+            const trustedGovernmentDomains = [
+                // Exact matches
+                'gov.sg', 'singpass.gov.sg', 'cpf.gov.sg', 'iras.gov.sg', 
+                'moe.gov.sg', 'moh.gov.sg', 'hdb.gov.sg', 'mom.gov.sg', 
+                'sla.gov.sg', 'police.gov.sg', 'scdf.gov.sg', 'pa.gov.sg',
+                'nea.gov.sg', 'bca.gov.sg', 'lta.gov.sg', 'ura.gov.sg',
+                'ema.gov.sg',
+                
+                // Legitimate subdomains of gov.sg
+                'www.gov.sg', 'login.gov.sg', 'secure.gov.sg', 'm.gov.sg',
+                'mobile.gov.sg', 'app.gov.sg', 'api.gov.sg', 'mail.gov.sg',
+                'portal.gov.sg', 'services.gov.sg', 'www.sg60.gov.sg',
+                'www.togetherforbetter.gov.sg', 'www.factually.gov.sg'
+            ];
+            
+            // Check for exact match only (no vulnerable endsWith logic)
+            return trustedGovernmentDomains.includes(domain);
         } catch (error) {
             return false;
         }
