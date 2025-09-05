@@ -385,21 +385,28 @@ async function clearScanHistory() {
         });
 
         if (response && response.success) {
-            // Reload the statistics and history
-            await loadPastAnalysisStats();
-            await loadPastAnalysisHistory('all');
+            // Reset UI elements
+            document.getElementById('totalDomains').textContent = '0';
+            document.getElementById('totalScans').textContent = '0';
+            document.getElementById('threatsDetected').textContent = '0';
+            document.getElementById('storageUsed').textContent = '0 bytes';
             
-            // Reset filter to 'all'
-            const historyFilter = document.getElementById('historyFilter');
-            if (historyFilter) {
-                historyFilter.value = 'all';
+            // Clear history list
+            const historyList = document.getElementById('historyList');
+            if (historyList) {
+                historyList.innerHTML = `
+                    <div class="no-history">
+                        <div class="icon">📊</div>
+                        <p>No scan history found</p>
+                        <p style="font-size: 12px; margin-top: 5px;">Scan some websites to see your history here!</p>
+                    </div>
+                `;
             }
             
             console.log('CatchThePhish: Scan history cleared successfully');
         } else {
-            alert('Failed to clear scan history: ' + (response?.error || 'Unknown error'));
+            throw new Error(response?.error || 'Failed to clear history');
         }
-
     } catch (error) {
         console.error('CatchThePhish: Error clearing scan history:', error);
         alert('Error clearing scan history: ' + error.message);

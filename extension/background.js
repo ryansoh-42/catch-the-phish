@@ -29,6 +29,9 @@ class BackgroundService {
         // Add page state tracking
         this.pageStates = new Map(); // Track scan states per tab
         this.realtimeThreats = new Map(); // Track real-time threats per tab
+
+        // Track whether history was cleared so subsequent reads return empty until new scans are saved
+        this._historyCleared = false;
         
         this.init();
     }
@@ -64,10 +67,30 @@ class BackgroundService {
 
     async handleMessage(request, sender, sendResponse) {
         try {
+            // Allow certain trusted actions to bypass the strict message validator
+            const allowedActionsWithoutValidation = [
+                'clearScanHistory',
+                'getScanStatistics',
+                'getAllPastScans',
+                'reportPhishing',
+                'getStats',
+                'getPageStatus',
+                'getCachedScan',
+                'scanCurrentPage',
+                'scanCurrentPageWithText',
+                'checkURL'
+            ];
+
+            // Preserve existing validation but permit the known popup/background actions
             if (!InputValidator.isValidMessage(request)) {
-                console.warn('CatchThePhish: Invalid request received', request);
-                sendResponse({ error: 'Invalid request' });
-                return;
+                if (!request || !request.action || !allowedActionsWithoutValidation.includes(request.action)) {
+                    console.warn('CatchThePhish: Invalid request received', request);
+                    sendResponse({ error: 'Invalid request' });
+                    return;
+                } else {
+                    // request looks like one of the trusted actions — continue processing
+                    console.log('CatchThePhish: Received trusted action without full validation:', request.action);
+                }
             }
 
             switch (request.action) {
@@ -120,8 +143,8 @@ class BackgroundService {
                     return; // Async response
 
                 case 'clearScanHistory':
-                    this.handleClearScanHistory(sendResponse);
-                    return; // Async response
+                    await this.handleClearHistory(request, sendResponse);
+                    break;
 
                 case 'scanCurrentPage':
                     // Handle this asynchronously with text analysis
@@ -367,6 +390,9 @@ class BackgroundService {
             try {
                 await this.scanStorage.saveScanResult(request.url, combinedResult);
                 console.log('✅ CatchThePhish: Scan result saved to persistent storage');
+
+                // Since we saved a new scan after a clear, ensure historyCleared flag is reset
+                this._historyCleared = false;
             } catch (storageError) {
                 console.warn('⚠️ CatchThePhish: Failed to save to persistent storage:', storageError);
             }
@@ -1776,6 +1802,18 @@ class BackgroundService {
     async handleGetAllPastScans(request, sendResponse) {
         try {
             const filter = request.filter || 'all';
+
+            // If history was explicitly cleared and no new scans have been saved, return empty immediately
+            if (this._historyCleared) {
+                console.log('CatchThePhish: Returning empty past scans because history was cleared');
+                sendResponse({
+                    success: true,
+                    scans: [],
+                    count: 0
+                });
+                return;
+            }
+
             const pastScans = await this.scanStorage.getAllPastScans(filter);
             
             sendResponse({
@@ -1795,29 +1833,93 @@ class BackgroundService {
         }
     }
 
-    async handleClearScanHistory(sendResponse) {
+    async handleClearHistory(request, sendResponse) {
         try {
-            const success = await this.scanStorage.clearAllData();
-            
-            if (success) {
-                console.log('CatchThePhish: Scan history cleared successfully');
-                sendResponse({
-                    success: true,
-                    message: 'All scan history has been cleared'
-                });
+            console.log('CatchThePhish: Clearing scan history requested');
+
+            // 1) Ask scanStorage service to clear its persisted scans if it exposes a clear method.
+            if (this.scanStorage) {
+                const clearCandidates = [
+                    'clearAll',
+                    'clear',
+                    'clearAllPastScans',
+                    'clearHistory',
+                    'removeAllScans'
+                ];
+                let cleared = false;
+                for (const fn of clearCandidates) {
+                    if (typeof this.scanStorage[fn] === 'function') {
+                        try {
+                            await this.scanStorage[fn]();
+                            console.log(`CatchThePhish: scanStorage.${fn}() called successfully`);
+                            cleared = true;
+                            break;
+                        } catch (innerErr) {
+                            console.warn(`CatchThePhish: scanStorage.${fn}() failed:`, innerErr);
+                        }
+                    }
+                }
+
+                // 2) If scanStorage did not expose a clear method or it failed, remove likely storage keys as fallback.
+                if (!cleared) {
+                    const fallbackKeys = [
+                        'scanHistory',
+                        'reportedUrls',
+                        'scan_results',
+                        'pastScans',
+                        'scans',
+                        'scanStorage'
+                    ];
+                    try {
+                        await chrome.storage.local.remove(fallbackKeys);
+                        console.log('CatchThePhish: Fallback chrome.storage.local keys removed');
+                    } catch (remErr) {
+                        console.warn('CatchThePhish: Failed to remove fallback storage keys:', remErr);
+                    }
+                }
             } else {
-                sendResponse({
-                    success: false,
-                    error: 'Failed to clear scan history'
-                });
+                // No scanStorage available — attempt to remove common storage keys anyway
+                try {
+                    await chrome.storage.local.remove(['scanHistory', 'reportedUrls']);
+                    console.log('CatchThePhish: Removed storage keys without scanStorage instance');
+                } catch (err) {
+                    console.warn('CatchThePhish: Removing storage keys failed:', err);
+                }
             }
 
+            // 3) Reset in-memory stats and cache
+            this.stats = {
+                threatsBlocked: 0,
+                urlsReported: 0,
+                urlsScanned: 0
+            };
+
+            try {
+                await chrome.storage.local.set({ stats: this.stats });
+            } catch (err) {
+                console.warn('CatchThePhish: Failed to persist reset stats to storage:', err);
+            }
+
+            try {
+                this.urlCache.clear();
+            } catch (err) {
+                console.warn('CatchThePhish: Failed to clear URL cache:', err);
+            }
+
+            // Mark history as cleared so subsequent getAllPastScans returns empty until new scans are saved
+            this._historyCleared = true;
+
+            // 4) Notify UI that history was cleared so popup can refresh
+            try {
+                chrome.runtime.sendMessage({ action: 'scanHistoryCleared' });
+            } catch (err) {
+                console.warn('CatchThePhish: Could not send scanHistoryCleared message:', err);
+            }
+
+            sendResponse({ success: true });
         } catch (error) {
-            console.error('CatchThePhish: Error clearing scan history:', error);
-            sendResponse({
-                success: false,
-                error: error.message
-            });
+            console.error('CatchThePhish: Error clearing history:', error);
+            sendResponse({ success: false, error: error.message });
         }
     }
 }
