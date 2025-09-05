@@ -1,5 +1,5 @@
 # CatchThePhish Browser Extension
-Protecting Singaporeans from rising digital threats like scams, phishing, and impersonation.
+Protecting Singaporeans from rising digital threats like scams, phishing, and impersonation.  
 This browser extension provides real-time scam detection, AI-powered phishing text analysis, and one-click scam reporting, designed especially for busy working adults (30–49 years old), the demographic most frequently targeted by phishing attacks.
 
 ## Features
@@ -30,11 +30,15 @@ This browser extension provides real-time scam detection, AI-powered phishing te
 catch-the-phish/
 ├── demo/
 │   ├── test-phishing-page.html   # Sample phishing webpage for testing
-│   └── test-urls.txt             # List of test URLs
+│   ├── demo-launcher.html
+│   ├── singapore-phishing-demo.html
+│   ├── banking-phishing-demo.html
+│   └── demo-test-urls.txt        # List of test URLs
 ├── extension/                    # Browser extension frontend
 │   ├── icons/
 │   ├── popup/
 │   ├── styles/
+│   ├── utils/
 │   ├── background.js
 │   ├── content.js
 │   └── manifest.json
@@ -47,9 +51,9 @@ catch-the-phish/
 │   │   └── main.py
 │   ├── Dockerfile
 │   └── requirements.txt
-├── docker-compose.yml            
-└── README.md                     
-```
+├── docker-compose.yml
+└── README.md
+````
 
 ## Setup & Installation
 
@@ -59,9 +63,10 @@ catch-the-phish/
 ```bash
 git clone https://github.com/yourusername/catch-the-phish.git
 cd catch-the-phish
-```
+````
 
 #### Build and run with Docker Compose:
+
 ```bash
 docker compose build
 docker compose up
@@ -78,13 +83,13 @@ The backend will start at:
 4. Click **Load Unpacked** and select the `extension/` folder.
 5. The extension icon will appear in your browser toolbar.
 
-
 ### 3. Testing
 
 #### Open Demo Page
 
-* Open `demo/test-phishing-page.html` in Chrome.
-* Hover URLs from `demo/test-urls.txt`.
+* Open [http://localhost:3000](http://localhost:3000) in Chrome.
+* Open Developer Tools.
+* Hover URLs from the page.
 * Interact with suspicious text to trigger warnings.
 
 #### Expected Behaviours
@@ -103,9 +108,11 @@ The backend will start at:
 
 ## API Endpoints
 
-### Analyze URL
+### 1. Analyze URL
 
 **Endpoint:** `POST /url-analysis/analyze-url`
+
+Analyzes type of suspicious URL.
 
 Request:
 
@@ -128,9 +135,11 @@ Response:
 }
 ```
 
-### Scan Page
+### 2. Scan Page
 
 **Endpoint:** `POST /url-analysis/scan-page`
+
+Scans page for suspicious URLs.
 
 Request:
 
@@ -161,21 +170,75 @@ Response:
 }
 ```
 
+### 3. Analyze Text
+
+**Endpoint:** `POST /text-analysis/analyze-text`
+
+Analyze a single text snippet for phishing risks.
+
+Request:
+
+```json
+{
+  "text": "Dear user, your bank account has been locked. Click here to reset."
+}
+```
+
+Response:
+
+```json
+{
+  "suspicious": true,
+  "confidence": 0.85,
+  "reason": "Detected impersonation and urgency in the message"
+}
+```
+
+### 4. Analyze Page Text (Chunks)
+
+**Endpoint:** `POST /text-analysis/analyze-page-text`
+
+Analyze multiple text chunks from a webpage.
+
+Request:
+
+```json
+{
+  "chunks": [
+    "Welcome to DBS login portal.",
+    "Your account is locked. Reset now to avoid suspension."
+  ]
+}
+```
+
+Response:
+
+```json
+{
+  "overall_suspicious": true,
+  "confidence": 0.9,
+  "reasons": [
+    "Chunk 2 contains urgency and impersonation"
+  ]
+}
+```
+
 ## Demo Video
 
 [YouTube Link – insert here after recording](https://youtube.com)
 
-
 ## Future Development
+
 * Multilingual support (Mandarin, Malay, Tamil).
 * Self-improving AI pipeline with crowdsourced scam reports.
 * Expansion to detect AI-generated images, voice, and video scams.
 * Integration with ScamShield & SPF reporting systems.
 
 ## Team
-- Sean Elisha Koh Tze Li (Leader)
-- Loo Zhi Yi
-- Eiffel Chong Shiang Yih
-- Ryan Soh Jing Zhi
-- Yong Yuan Qi
-- Lim Yixuan
+
+* Sean Elisha Koh Tze Li (Leader)
+* Loo Zhi Yi
+* Eiffel Chong Shiang Yih
+* Ryan Soh Jing Zhi
+* Yong Yuan Qi
+* Lim Yixuan
