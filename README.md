@@ -60,7 +60,7 @@ catch-the-phish/
 
 #### Clone the repository:
 ```bash
-git clone https://github.com/yourusername/catch-the-phish.git
+git clone https://github.com/ryansoh-42/catch-the-phish.git
 cd catch-the-phish
 ````
 
