@@ -11,6 +11,9 @@ class PhishingDetector {
     init() {
         this.setupLinkMonitoring();
         this.setupMessageListener();
+        this.setupPageNavigationMonitoring();
+        // Scan current page URL on load to catch address-bar navigations
+        setTimeout(() => this.scanCurrentPageURL(), 0);
         console.log('CatchThePhish: Phishing detector initialized');
     }
 
@@ -44,15 +47,77 @@ class PhishingDetector {
             }
         });
 
-        // Monitor paste events
+        // Monitor paste events (reliable via clipboardData + fallback)
         document.addEventListener('paste', (event) => {
-            setTimeout(() => {
-                const pastedText = event.target.value || event.target.textContent;
+            try {
+                let pastedText = '';
+                if (event.clipboardData && typeof event.clipboardData.getData === 'function') {
+                    pastedText = event.clipboardData.getData('text/plain');
+                }
+
+                // If clipboardData is unavailable, fallback to reading from the target after paste
+                if (!pastedText) {
+                    setTimeout(() => {
+                        const fallbackText = (event.target && (event.target.value || event.target.textContent)) || '';
+                        if (this.isURL(fallbackText)) {
+                            this.checkURL(fallbackText, 'pasted');
+                        }
+                    }, 50);
+                    return;
+                }
+
                 if (this.isURL(pastedText)) {
                     this.checkURL(pastedText, 'pasted');
                 }
-            }, 100);
-        });
+            } catch (e) {
+                console.warn('CatchThePhish: paste handler error', e);
+            }
+        }, true);
+    }
+
+    setupPageNavigationMonitoring() {
+        try {
+            let lastScannedUrl = '';
+            const scanIfChanged = () => {
+                const current = window.location.href;
+                if (current !== lastScannedUrl) {
+                    lastScannedUrl = current;
+                    this.scanCurrentPageURL();
+                }
+            };
+
+            // Handle SPA navigations
+            const pushState = history.pushState;
+            history.pushState = (...args) => {
+                const ret = pushState.apply(history, args);
+                setTimeout(scanIfChanged, 0);
+                return ret;
+            };
+
+            const replaceState = history.replaceState;
+            history.replaceState = (...args) => {
+                const ret = replaceState.apply(history, args);
+                setTimeout(scanIfChanged, 0);
+                return ret;
+            };
+
+            window.addEventListener('popstate', () => {
+                setTimeout(scanIfChanged, 0);
+            });
+        } catch (e) {
+            console.warn('CatchThePhish: setupPageNavigationMonitoring error', e);
+        }
+    }
+
+    scanCurrentPageURL() {
+        try {
+            const href = window.location.href;
+            if (this.isURL(href) && InputValidator.isValidURL(href)) {
+                this.checkURL(href, 'page_load');
+            }
+        } catch (e) {
+            console.warn('CatchThePhish: scanCurrentPageURL error', e);
+        }
     }
 
     setupMessageListener() {
@@ -121,12 +186,13 @@ class PhishingDetector {
 
     checkURL(url, context) {
         try {
-            if (!InputValidator.isValidURL(url)) {
+            const normalizedUrl = this.normalizeURLInput(url);
+            if (!InputValidator.isValidURL(normalizedUrl)) {
                 console.warn('CatchThePhish: Invalid URL in context:', context, url);
                 return;
             }
             
-            const sanitizedUrl = InputValidator.sanitizeURL(url);
+            const sanitizedUrl = InputValidator.sanitizeURL(normalizedUrl);
             console.log(`CatchThePhish: Checking ${context} URL:`, sanitizedUrl);
             
             chrome.runtime.sendMessage({
@@ -140,8 +206,25 @@ class PhishingDetector {
     }
 
     isURL(text) {
-        const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/i;
-        return urlPattern.test(text.trim());
+        if (!text || typeof text !== 'string') return false;
+        const trimmed = text.trim();
+        // Quick reject for obvious non-URLs
+        if (trimmed.length < 4 || /\s/.test(trimmed)) return false;
+        // Accept common URL forms with or without protocol
+        const urlLike = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,})(:[0-9]{2,5})?(\/[^\s]*)?$/i;
+        return urlLike.test(trimmed);
+    }
+
+    normalizeURLInput(text) {
+        const candidate = (text || '').trim();
+        if (!candidate) return candidate;
+        // If already has protocol, return as-is
+        if (/^https?:\/\//i.test(candidate)) return candidate;
+        // If it looks like a domain path, prefix https://
+        if (/^([\da-z.-]+)\.([a-z.]{2,})(:[0-9]{2,5})?(\/.*)?$/i.test(candidate)) {
+            return `https://${candidate}`;
+        }
+        return candidate;
     }
 
     getElementInfo(element) {

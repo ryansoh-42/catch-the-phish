@@ -42,6 +42,54 @@ class BackgroundService {
         // Create context menu for text analysis
         this.createContextMenu();
         
+        // Monitor navigations (including address bar pastes) and scan proactively
+        try {
+            const handleNav = async (details) => {
+                try {
+                    // Only handle top-level frame navigations
+                    if (details.frameId !== 0 || !details.url) return;
+                    // Quick validation
+                    if (!InputValidator.isValidURL(details.url)) return;
+                    const result = await this.analyzeURL(details.url);
+                    // If suspicious, notify tab's content script to show warning
+                    if (result.isSuspicious && details.tabId) {
+                        try {
+                            await chrome.tabs.sendMessage(details.tabId, {
+                                action: 'urlCheckResult',
+                                data: result
+                            });
+                        } catch (e) {
+                            console.warn('CatchThePhish: Unable to notify tab after navigation', e?.message || e);
+                        }
+                    }
+                } catch (navErr) {
+                    console.warn('CatchThePhish: navigation scan error', navErr);
+                }
+            };
+            chrome.webNavigation.onCommitted.addListener(handleNav);
+            chrome.webNavigation.onCompleted.addListener(handleNav);
+
+            // Fallback: observe tab updates (address bar navigations) and scan when status is complete
+            chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+                try {
+                    if (changeInfo.status === 'complete' && tab.url && InputValidator.isValidURL(tab.url)) {
+                        this.analyzeURL(tab.url).then((result) => {
+                            if (result.isSuspicious) {
+                                chrome.tabs.sendMessage(tabId, {
+                                    action: 'urlCheckResult',
+                                    data: result
+                                }).catch(() => {});
+                            }
+                        }).catch(() => {});
+                    }
+                } catch (e) {
+                    console.warn('CatchThePhish: tabs.onUpdated scan error', e);
+                }
+            });
+        } catch (e) {
+            console.warn('CatchThePhish: webNavigation listener error', e);
+        }
+        
         console.log('CatchThePhish: Background service initialized');
     }
 

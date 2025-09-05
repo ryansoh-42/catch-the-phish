@@ -12,9 +12,11 @@
 
     "permissions": [
         "activeTab",
+        "tabs",
         "storage",
         "scripting",
-        "contextMenus"
+        "contextMenus",
+        "webNavigation"
     ],
 
     "host_permissions": [
