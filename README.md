@@ -8,12 +8,10 @@ This browser extension provides real-time scam detection, AI-powered phishing te
   * Scans links on hover, copy, or paste.
   * Detects typosquatting, suspicious domains, and newly registered sites.
   * Cross-checks with VirusTotal API for authoritative verdicts.
-  * Inline warnings with simple explanations (e.g., “Domain mimics known bank”).
 
 * **AI-Powered Phishing Text Detection**
   * Flags scammy content with impersonation cues and urgency signals.
-  * Identifies AI-generated or suspiciously persuasive text.
-  * Highlights risky text directly on the page with tooltips.
+  * Identifies AI-generated or suspiciously persuasive text using HuggingFace models.
 
 * **Crowd Reporting**
   * One-click export of suspicious site details into JSON format.
@@ -87,23 +85,27 @@ The backend will start at:
 
 #### Open Demo Page
 
-* Open [http://localhost:3000](http://localhost:3000) in Chrome.
-* Open Developer Tools.
-* Hover URLs from the page.
-* Interact with suspicious text to trigger warnings.
+* Open [http://localhost:3000/demo-launcher.html](http://localhost:3000/demo-launcher.html) in Chrome.
+* Open Demo Sites: Click the demo links below to open different phishing scenarios
+* Test Features:
+  * Click "Scan This Website" button to test comprehensive page analysis
+  * Select suspicious text and right-click to test text analysis
+  * Hover over suspicious links to test URL detection
+* Observe Results: Check if the extension correctly identifies threats and provides warnings
+* Compare: Test on legitimate sites to ensure no false positives
 
 #### Expected Behaviours
 
-* **Suspicious URL** → Inline warning pop-up (e.g., “⚠️ Recently registered domain”).
-* **Phishing text** → Highlighted text with explanation tooltip.
+* **Suspicious URL** → Warning pop-up (e.g., “⚠️ Suspicious URL Detected”).
+* **Phishing text** → Select suspicious text and right-click to test text analysis
 * **Report button** → JSON payload of scam details displayed/exported.
-* **Educational tip** → Short advice included in warning UI.
+* **Educational tip** → Short advice included in warning pop-up.
 
 ## Tech Stack
 
-* **Frontend**: Chrome Extension (HTML, CSS, JS)
+* **Frontend**: Chrome Extension (HTML, CSS, JavaScript)
 * **Backend**: FastAPI (Python), VirusTotal API integration, Docker
-* **AI / Detection**: Rule-based heuristics + AI-powered text classification
+* **AI / Detection**: Rule-based heuristics + Hugging Face models for AI-powered phishing text classification
 * **Demo Tools**: Test phishing page, curated phishing URLs
 
 ## API Endpoints
