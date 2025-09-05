@@ -63,6 +63,12 @@ git clone https://github.com/yourusername/catch-the-phish.git
 cd catch-the-phish
 ````
 
+#### Environment Setup:
+Copy .env.example into .env and configure API keys:
+```bash
+cp .env.example .env
+```
+
 #### Build and run with Docker Compose:
 
 ```bash
