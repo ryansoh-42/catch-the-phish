@@ -97,9 +97,9 @@ The backend will start at:
 #### Expected Behaviours
 
 * **Suspicious URL** → Warning pop-up (e.g., “⚠️ Suspicious URL Detected”).
-* **Phishing text** → Highlighted text with explanation tooltip.
+* **Phishing text** → Select suspicious text and right-click to test text analysis
 * **Report button** → JSON payload of scam details displayed/exported.
-* **Educational tip** → Short advice included in warning UI.
+* **Educational tip** → Short advice included in warning pop-up.
 
 ## Tech Stack
 
