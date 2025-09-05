@@ -50,6 +50,7 @@ catch-the-phish/
 │   ├── Dockerfile
 │   └── requirements.txt
 ├── docker-compose.yml
+├── .env.example
 └── README.md
 ````
 
