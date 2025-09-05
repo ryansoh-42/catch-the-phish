@@ -50,6 +50,7 @@ catch-the-phish/
 │   ├── Dockerfile
 │   └── requirements.txt
 ├── docker-compose.yml
+├── .env.zip (password protected zip file with environment variables)
 ├── .env.example
 └── README.md
 ````
@@ -59,6 +60,7 @@ catch-the-phish/
 ### 1. Backend (FastAPI)
 
 #### Clone the repository:
+
 ```bash
 git clone https://github.com/ryansoh-42/catch-the-phish.git
 cd catch-the-phish
@@ -69,6 +71,12 @@ Copy .env.example into .env and configure API keys:
 ```bash
 cp .env.example .env
 ```
+
+#### With Zipped codebase (For Tech Series Hackathon accessors only)
+
+- The .env file is encrypted with a password with the necessary environment variables. 
+- The password is: `poopoopeepee`
+- Please reach out to @zhiyiloo on Telegram if you still have trouble setting up the environment.
 
 #### Build and run with Docker Compose:
 
